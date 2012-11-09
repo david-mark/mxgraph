@@ -33,17 +33,6 @@ function mxRubberband(graph)
 		});
 		
 		this.graph.addListener(mxEvent.PAN, this.panHandler);
-
-		// Automatic deallocation of memory
-		if (mxClient.IS_IE)
-		{
-			mxEvent.addListener(window, 'unload',
-				mxUtils.bind(this, function()
-				{
-					this.destroy();
-				})
-			);
-		}
 	}
 };
 
@@ -131,41 +120,40 @@ mxRubberband.prototype.mouseDown = function(sender, me)
 		this.start(me.getX() + origin.x, me.getY() + origin.y);
 
 		// Workaround for rubberband stopping if the mouse leaves the
-		// graph container in Firefox.
-		if (mxClient.IS_NS && !mxClient.IS_SF && !mxClient.IS_GC)
+		// graph container.
+		var container = this.graph.container;
+			
+		function createMouseEvent(evt)
 		{
-			var container = this.graph.container;
+			var me = new mxMouseEvent(evt);
+			var pt = mxUtils.convertPoint(container, me.getX(), me.getY());
 			
-			function createMouseEvent(evt)
-			{
-				var me = new mxMouseEvent(evt);
-				var pt = mxUtils.convertPoint(container, me.getX(), me.getY());
-				
-				me.graphX = pt.x;
-				me.graphY = pt.y;
-				
-				return me;
-			};
+			me.graphX = pt.x;
+			me.graphY = pt.y;
 			
-			this.dragHandler = mxUtils.bind(this, function(evt)
-			{
-				this.mouseMove(this.graph, createMouseEvent(evt));
-			});
-
-			this.dropHandler = mxUtils.bind(this, function(evt)
-			{
-				this.mouseUp(this.graph, createMouseEvent(evt));
-			});
-
-			mxEvent.addListener(document, 'mousemove', this.dragHandler);
-			mxEvent.addListener(document, 'mouseup', this.dropHandler);
+			return me;
 		}
+		
+		this.dragHandler = mxUtils.bind(this, function(evt)
+		{
+			this.mouseMove(this.graph, createMouseEvent(evt));
+		});
+
+		this.dropHandler = mxUtils.bind(this, function(evt)
+		{
+			this.mouseUp(this.graph, createMouseEvent(evt));
+		});
+
+		mxEvent.addListener(document, 'mousemove', this.dragHandler);
+		mxEvent.addListener(document, 'mouseup', this.dropHandler);
+		
 		
 		// Does not prevent the default for this event so that the
 		// event processing chain is still executed even if we start
 		// rubberbanding. This is required eg. in ExtJs to hide the
 		// current context menu. In mouseMove we'll make sure we're
 		// not selecting anything while we're rubberbanding.
+			
 		me.consume(false);
 	}
 };

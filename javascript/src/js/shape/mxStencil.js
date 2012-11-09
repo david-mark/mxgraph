@@ -235,7 +235,7 @@ mxStencil.prototype.evaluateAttribute = function(node, attribute, state)
 mxStencil.prototype.renderDom = function(shape, bounds, parentNode, state)
 {
 	var vml = shape.dialect != mxConstants.DIALECT_SVG;
-	var vmlScale = (document.documentMode == 8) ? 1 : shape.vmlScale;
+	var vmlScale = shape.vmlScale || 1;
 	var rotation = shape.rotation || 0;
 	var inverse = false;
 	

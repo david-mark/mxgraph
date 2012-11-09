@@ -10,15 +10,7 @@ var mxEvent =
 	 * 
 	 * Cross-browser DOM event support. For internal event handling,
 	 * <mxEventSource> and the graph event dispatch loop in <mxGraph> are used.
-	 * 
-	 * Memory Leaks:
-	 * 
-	 * Use this class for adding and removing listeners to/from DOM nodes. The
-	 * <removeAllListeners> function is provided to remove all listeners that
-	 * have been added using <addListener>. The function should be invoked when
-	 * the last reference is removed in the JavaScript code, typically when the
-	 * referenced DOM node is removed from the DOM, and helps to reduce memory
-	 * leaks in IE6.
+	 * 	 
 	 * 
 	 * Variable: objects
 	 * 
@@ -169,7 +161,7 @@ var mxEvent =
 		});
 		
 		mxEvent.addListener(node, mm, function (evt)
-		{
+		{		    
 			if (move != null)
 			{
 				move(evt);
@@ -270,15 +262,16 @@ var mxEvent =
 			{
 				// IE does not give an event object but the
 				// global event object is the mousewheel event
-				// at this point in time.
-				if (evt == null)
+				// at this point
+				
+				if (!evt)
 				{
 					evt = window.event;
 				}
 			
 				var delta = 0;
 				
-				if (mxClient.IS_NS && !mxClient.IS_SF && !mxClient.IS_GC)
+				if (typeof evt.detail == 'number')
 				{
 					delta = -evt.detail/2;
 				}
@@ -288,25 +281,16 @@ var mxEvent =
 				}
 				
 				// Handles the event using the given function
-				if (delta != 0)
+				if (delta)
 				{
 					funct(evt, delta > 0);
 				}
 			};
 	
-			// Webkit has NS event API, but IE event name and details 
-			if (mxClient.IS_NS)
-			{
-				var eventName = (mxClient.IS_SF || 	mxClient.IS_GC) ?
-						'mousewheel' : 'DOMMouseScroll';
-				mxEvent.addListener(window, eventName, wheelHandler);
-			}
-			else
-			{
-				// TODO: Does not work with Safari and Chrome but it should be
-				// working as tested in etc/markup/wheel.html
-				mxEvent.addListener(document, 'mousewheel', wheelHandler);
-			}
+			// TODO: debounce
+			
+			mxEvent.addListener(document.documentElement, 'mousewheel', wheelHandler);
+			mxEvent.addListener(document.documentElement, 'DOMMouseScroll', wheelHandler);
 		}
 	},
 	
@@ -315,26 +299,21 @@ var mxEvent =
 	 *
 	 * Disables the context menu for the given element.
 	 */
-	disableContextMenu: function()
+	disableContextMenu: function(element)
 	{
-		if (mxClient.IS_IE && (typeof(document.documentMode) === 'undefined' || document.documentMode < 9))
+		mxEvent.addListener(element, 'contextmenu', function(e)
 		{
-			return function(element)
-			{
-				mxEvent.addListener(element, 'contextmenu', function()
-				{
-					return false;
-				});
-			};
-		}
-		else
-		{
-			return function(element)
-			{
-				element.setAttribute('oncontextmenu', 'return false;');
-			};		
-		}
-	}(),
+			if (e.preventDefault) {
+				e.preventDefault();
+			} else {
+				e.returnValue = false;
+			}
+		});
+		
+		element.setAttribute('oncontextmenu', 'return false;');
+		
+		element = null;		
+	},
 	
 	/**
 	 * Function: getSource
@@ -343,7 +322,7 @@ var mxEvent =
 	 */
 	getSource: function(evt)
 	{
-		return (evt.srcElement != null) ? evt.srcElement : evt.target;
+		return evt.target || evt.srcElement;
 	},
 
 	/**
@@ -353,8 +332,7 @@ var mxEvent =
 	 */
 	isConsumed: function(evt)
 	{
-		return evt.isConsumed != null &&
-			evt.isConsumed; // Opera
+		return evt.isConsumed;
 	},
 
 	/**
@@ -366,7 +344,11 @@ var mxEvent =
 	 */
 	isLeftMouseButton: function(evt)
 	{
-		return evt.button == ((mxClient.IS_IE && (typeof(document.documentMode) === 'undefined' || document.documentMode < 9)) ? 1 : 0);
+		if (typeof evt.which == 'undefined') {			
+			return 1 == evt.button & 1;
+		}
+		
+		return 1 == evt.which; 
 	},
 	
 	/**
@@ -378,7 +360,11 @@ var mxEvent =
 	 */
 	isRightMouseButton: function(evt)
 	{
-		return evt.button == 2;
+		if (typeof evt.which == 'undefined') {			
+			return 2 == evt.button & 2;
+		}
+		
+		return 2 == evt.which; 
 	},
 
 	/**
@@ -458,7 +444,6 @@ var mxEvent =
 	/**
 	 * Function: getClientX
 	 * 
-	 * Returns true if the meta key is pressed for the given event.
 	 */
 	getClientX: function(e)
 	{
@@ -468,11 +453,29 @@ var mxEvent =
 	/**
 	 * Function: getClientY
 	 * 
-	 * Returns true if the meta key is pressed for the given event.
 	 */
 	getClientY: function(e)
 	{
 		return mxEvent.getMainEvent(e).clientY;
+	},
+	
+	/**
+	 * Function: getPageX
+	 * 
+	 */
+	
+	getPageX: function(e)
+	{
+		return mxEvent.getMainEvent(e).pageX;
+	},
+
+	/**
+	 * Function: getPageY
+	 * 
+	 */
+	getPageY: function(e)
+	{
+		return mxEvent.getMainEvent(e).pageY;
 	},
 
 	/**
@@ -496,25 +499,23 @@ var mxEvent =
 		if (preventDefault)
 		{
 			if (evt.preventDefault)
-			{
-				if (stopPropagation)
-				{
-					evt.stopPropagation();
-				}
-				
+			{								
 				evt.preventDefault();
 			}
-			else if (stopPropagation)
-			{
-				evt.cancelBubble = true;
-			}
+			
+			evt.returnValue = false;	
 		}
-
-		// Opera
-		evt.isConsumed = true;
-
-		// Other browsers
-		evt.returnValue = false;
+		
+		if (stopPropagation)
+		{
+			if (evt.stopPropagation) {				
+			    evt.stopPropagation();
+			}
+			
+			evt.cancelBubble = true;
+		}
+		
+		evt.isConsumed = true;		
 	},
 	
 	//

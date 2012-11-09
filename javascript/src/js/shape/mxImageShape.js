@@ -141,7 +141,7 @@ mxImageShape.prototype.create = function()
         var img = this.image.toUpperCase();
 		
 		// Handles non-flipped embedded images in IE6
-		if (mxClient.IS_IE && !flipH && !flipV && img.substring(0, 6) == 'MHTML:')
+		if (document.documentElement.style.filters && !flipH && !flipV && img.substring(0, 6) == 'MHTML:')
 	    {
 			// LATER: Check if outer DIV is required or if aspect can be implemented
 			// by adding an offset to the image loading or the background via CSS.
@@ -154,7 +154,7 @@ mxImageShape.prototype.create = function()
 			node.appendChild(this.imageNode);
 		}
 		// Handles all data URL images and HTML images for IE9 with no VML support (in SVG mode)
-		else if (!mxClient.IS_IE || img.substring(0, 5) == 'DATA:' || document.documentMode >= 9)
+		else if (mxClient.IS_VML || img.substring(0, 5) == 'DATA:')
 		{
 			this.imageNode = document.createElement('img');
 			this.imageNode.setAttribute('src', this.image);

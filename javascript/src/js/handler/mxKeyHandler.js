@@ -83,17 +83,6 @@ function mxKeyHandler(graph, target)
 				this.keyDown(evt);
 			})
 		);
-		
-		// Automatically deallocates memory in IE
-		if (mxClient.IS_IE)
-		{
-			mxEvent.addListener(window, 'unload',
-				mxUtils.bind(this, function()
-				{
-					this.destroy();
-				})
-			);
-		}
 	}
 };
 

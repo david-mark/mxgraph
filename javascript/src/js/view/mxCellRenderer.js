@@ -368,6 +368,7 @@ mxCellRenderer.prototype.createShape = function(state)
 {
 	if (state.style != null)
 	{
+	    
 		// Checks if there is a stencil for the name and creates
 		// a shape instance for the stencil if one exists
 		var key = state.style[mxConstants.STYLE_SHAPE];
@@ -700,11 +701,11 @@ mxCellRenderer.prototype.initializeLabel = function(state)
 	{
 		// Adds the text to the container if the dialect is not SVG and we
 		// have an SVG-based browser which doesn't support foreignObjects
-		if (mxClient.IS_SVG && mxClient.NO_FO)
+		if (mxClient.IS_SVG && typeof state.text.init != 'undefined')
 		{
 			state.text.init(graph.container);
 		}
-		else if (mxUtils.isVml(state.view.getDrawPane()))
+		else if (mxUtils.IS_VML)
 		{
 			if (state.shape.label != null)
 			{
@@ -907,8 +908,7 @@ mxCellRenderer.prototype.initControl = function(state, control, handleEvents, cl
 	// In the special case where the label is in HTML and the display is SVG the image
 	// should go into the graph container directly in order to be clickable. Otherwise
 	// it is obscured by the HTML label that overlaps the cell.
-	var isForceHtml = graph.isHtmlLabel(state.cell) &&
-		mxClient.NO_FO &&
+	var isForceHtml = graph.isHtmlLabel(state.cell) && control.init &&
 		graph.dialect == mxConstants.DIALECT_SVG;
 
 	if (isForceHtml)
@@ -1162,7 +1162,7 @@ mxCellRenderer.prototype.redrawLabel = function(state)
 {
 	var value = this.getLabelValue(state);
 	
-	// FIXME: Add label always if HTML label and NO_FO
+	// FIXME: Add label always if HTML label and NO_FO (?)
 	if (state.text == null && value != null && (mxUtils.isNode(value) || value.length > 0))
 	{
 		this.createLabel(state, value);

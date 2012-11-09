@@ -53,7 +53,7 @@ mxGraphHandler.prototype.graph = null;
  * cells in the graph is limited to a small number, eg.
  * 500.
  */
-mxGraphHandler.prototype.maxCells = (mxClient.IS_IE) ? 20 : 50;
+mxGraphHandler.prototype.maxCells = 50;
 
 /**
  * Variable: enabled
@@ -363,11 +363,11 @@ mxGraphHandler.prototype.mouseDown = function(sender, me)
 			// this handler which leads to an inconsistent state (no reset called).
 			// Same for cellWasClicked which will block clearing the selection when
 			// clicking the background after clicking on the SELECT element in Safari.
-			if ((!mxClient.IS_SF && !mxClient.IS_GC) || me.getSource().nodeName != 'SELECT')
+			if (me.getSource().nodeName != 'SELECT')
 			{
 				me.consume();
 			}
-			else if (mxClient.IS_SF && me.getSource().nodeName == 'SELECT')
+			else if (me.getSource().nodeName == 'SELECT')
 			{
 				this.cellWasClicked = false;
 				this.first = null;
@@ -701,7 +701,7 @@ mxGraphHandler.prototype.mouseMove = function(sender, me)
 
 		me.getState().setCursor(cursor);
 		me.consume();
-	}
+	}	
 };
 
 /**

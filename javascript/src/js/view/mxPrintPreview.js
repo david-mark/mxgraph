@@ -287,7 +287,7 @@ mxPrintPreview.prototype.open = function(css)
 			// Adds all required stylesheets and namespaces
 			mxClient.link('stylesheet', mxClient.basePath + '/css/common.css', doc);
 	
-			if (mxClient.IS_IE && document.documentMode != 9)
+			if (mxClient.IS_VML)
 			{
 				doc.namespaces.add('v', 'urn:schemas-microsoft-com:vml');
 				doc.namespaces.add('o', 'urn:schemas-microsoft-com:office:office');
@@ -335,7 +335,7 @@ mxPrintPreview.prototype.open = function(css)
 					doc.body.appendChild(table);
 					
 					// Workaround for position: fixed which isn't working in IE
-					if (mxClient.IS_IE)
+					if (mxClient.IS_IE6)
 					{
 						table.style.position = 'absolute';
 						
@@ -364,7 +364,7 @@ mxPrintPreview.prototype.open = function(css)
 			// in VML so we need to fetch the markup of the DIV containing
 			// the image after the udpate of the style of the DOM node.
 			// LATER: Allow document for display markup to be customized.
-			if (mxClient.IS_IE && document.documentMode != 9)
+			if (mxClient.IS_VML)
 			{
 				pages = [];
 	
@@ -466,7 +466,7 @@ mxPrintPreview.prototype.open = function(css)
 					// to create the complete page and then copy it over to the
 					// new window.document. This can be fixed later by using the
 					// ownerDocument of the container in mxShape and mxGraphView.
-					if (mxClient.IS_IE)
+					if (typeof div.outerHTML == 'string')
 					{
 						// For some obscure reason, removing the DIV from the
 						// parent before fetching its outerHTML has missing
@@ -487,7 +487,9 @@ mxPrintPreview.prototype.open = function(css)
 					}
 					else
 					{
-						div.parentNode.removeChild(div);
+						// This is a bogus node import
+						
+						//div.parentNode.removeChild(div);
 						doc.body.appendChild(div);
 					}
 	
@@ -597,23 +599,7 @@ mxPrintPreview.prototype.createPageSelector = function(vpages, hpages)
 		{
 			var pageNum = i * hpages + j + 1;
 			var cell = doc.createElement('td');
-			
-			// Needs anchor for all browers to work without JavaScript
-			// LATER: Does not work in Firefox because the generated document
-			// has the URL of the opening document, the anchor is appended
-			// to that URL and the full URL is loaded on click.
-			if (!mxClient.IS_NS || mxClient.IS_SF || mxClient.IS_GC)
-			{
-				var a = doc.createElement('a');
-				a.setAttribute('href', '#mxPage-' + pageNum);
-				mxUtils.write(a, pageNum, doc);
-				cell.appendChild(a);
-			}
-			else
-			{
-				mxUtils.write(cell, pageNum, doc);
-			}
-
+			mxUtils.write(cell, pageNum, doc);
 			row.appendChild(cell);
 		}
 		
@@ -715,7 +701,7 @@ mxPrintPreview.prototype.renderPage = function(w, h, dx, dy, scale, pageNumber)
 		{
 			// Removes overlay pane with selection handles
 			// controls and icons from the print output
-			if (mxClient.IS_IE)
+			if (typeof view.overlayPane.innerHTML == 'string')
 			{
 				view.overlayPane.innerHTML = '';
 			}

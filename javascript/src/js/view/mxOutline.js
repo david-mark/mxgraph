@@ -233,7 +233,7 @@ mxOutline.prototype.init = function(container)
 	
 	if (this.enabled)
 	{
-		this.sizer.node.style.cursor = 'pointer';
+		this.sizer.node.style.cursor = 'move';
 	}
 
 	// Redirects all events from the sizerhandle to the outline

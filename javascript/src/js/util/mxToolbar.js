@@ -112,11 +112,10 @@ mxToolbar.prototype.addItem = function(title, icon, funct, pressedIcon, style, f
 	// Invokes the function on a click on the toolbar item
 	if (funct != null)
 	{
-		mxEvent.addListener(img, (mxClient.IS_TOUCH) ? 'touchend' : 'click', funct);
+		mxEvent.addListener(img, 'click', funct);
 	}
 	
 	var md = (mxClient.IS_TOUCH) ? 'touchstart' : 'mousedown';
-	var mu = (mxClient.IS_TOUCH) ? 'touchend' : 'mouseup';
 
 	// Highlights the toolbar item with a gray background
 	// while it is being clicked with the mouse
@@ -124,7 +123,7 @@ mxToolbar.prototype.addItem = function(title, icon, funct, pressedIcon, style, f
 	{
 		if (pressedIcon != null)
 		{
-			img.setAttribute('src', pressedIcon);
+			img.src = pressedIcon;
 		}
 		else
 		{
@@ -178,7 +177,7 @@ mxToolbar.prototype.addItem = function(title, icon, funct, pressedIcon, style, f
 	{
 		if (pressedIcon != null)
 		{
-			img.setAttribute('src', icon);
+			img.src = icon;
 		}
 		else
 		{
@@ -186,7 +185,8 @@ mxToolbar.prototype.addItem = function(title, icon, funct, pressedIcon, style, f
 		}
 	});
 	
-	mxEvent.addListener(img, mu, mouseHandler);
+	mxEvent.addListener(img, 'touchend', mouseHandler);
+	mxEvent.addListener(document, 'mouseup', mouseHandler);
 	mxEvent.addListener(img, 'mouseout', mouseHandler);
 	
 	return img;

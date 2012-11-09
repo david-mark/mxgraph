@@ -249,7 +249,7 @@ mxDragSource.prototype.mouseDown = function(evt)
 		this.startDrag(evt);
 		
 		var mm = (mxClient.IS_TOUCH) ? 'touchmove' : 'mousemove';
-		var mu = (mxClient.IS_TOUCH) ? 'touchend' : 'mouseup';
+		var mu = (mxClient.IS_TOUCH) ? 'touchend' : 'mouseup';		
 		
 		this.mouseMoveHandler = mxUtils.bind(this, this.mouseMove);
 		mxEvent.addListener(document, mm, this.mouseMoveHandler);

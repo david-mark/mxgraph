@@ -87,23 +87,22 @@ var mxUtils =
 	 */
 	repaintGraph: function(graph, pt)
 	{
-		if (mxClient.IS_GC || mxClient.IS_SF || mxClient.IS_OP)
+		
+		var c = graph.container;
+		
+		if (c != null && pt != null && (c.scrollLeft > 0 || c.scrollTop > 0))
 		{
-			var c = graph.container;
-			
-			if (c != null && pt != null && (c.scrollLeft > 0 || c.scrollTop > 0))
-			{
-				var dummy = document.createElement('div');
-				dummy.style.position = 'absolute';
-				dummy.style.left = pt.x + 'px';
-				dummy.style.top = pt.y + 'px';
-				dummy.style.width = '1px';
-				dummy.style.height = '1px';
-			
-				c.appendChild(dummy);
-				c.removeChild(dummy);
-			}
+			var dummy = document.createElement('div');
+			dummy.style.position = 'absolute';
+			dummy.style.left = pt.x + 'px';
+			dummy.style.top = pt.y + 'px';
+			dummy.style.width = '1px';
+			dummy.style.height = '1px';
+		
+			c.appendChild(dummy);
+			c.removeChild(dummy);
 		}
+	
 	},
 
 	/**
@@ -117,7 +116,7 @@ var mxUtils =
 	 */
 	getCurrentStyle: function()
 	{
-		if (mxClient.IS_IE)
+		if (document.documentElement.currentStyle)
 		{
 			return function(element)
 			{
@@ -129,7 +128,7 @@ var mxUtils =
 			return function(element)
 			{
 				return (element != null) ?
-					window.getComputedStyle(element, '') :
+					document.defaultView.getComputedStyle(element, '') :
 					null;
 			};
 		}
@@ -159,11 +158,11 @@ var mxUtils =
 	 * function to the specified scope. Inside funct, the "this" keyword
 	 * becomes a reference to that scope.
 	 */
-	bind: function(scope, funct)
+	bind: function(thisObject, funct)
 	{
 		return function()
 		{
-			return funct.apply(scope, arguments);
+			return funct.apply(thisObject, arguments);
 		};
 	},
 	
@@ -189,7 +188,6 @@ var mxUtils =
 			{
 				eval('var _mxJavaScriptExpression='+expr);
 				result = _mxJavaScriptExpression;
-				// TODO: Use delete here?
 				_mxJavaScriptExpression = null;
 			}
 			catch (e)
@@ -257,8 +255,32 @@ var mxUtils =
 	 */
 	findNodeByAttribute: function()
 	{
+		
+		if (document.evaluate)
+		{
+			return function(node, attr, value)
+			{
+				var result = node.ownerDocument.evaluate(
+						'//*[@' + attr + '=\'' + value + '\']',
+						node.ownerDocument, null,
+						XPathResult.ANY_TYPE, null);
+
+				return result.iterateNext();
+			};
+		}
+		
 		// Workaround for missing XPath support in IE9
-		if (document.documentMode >= 9)
+				
+		else if (document.selectSingleNode)
+		{
+			return function(node, attr, value)
+			{
+				var expr = '//*[@' + attr + '=\'' + value + '\']';
+				
+				return node.ownerDocument.selectSingleNode(expr);
+			};
+		}		
+		else
 		{
 			return function(node, attr, value)
 			{
@@ -280,27 +302,6 @@ var mxUtils =
 				}
 		
 				return result;
-			};
-		}
-		else if (mxClient.IS_IE)
-		{
-			return function(node, attr, value)
-			{
-				var expr = '//*[@' + attr + '=\'' + value + '\']';
-				
-				return node.ownerDocument.selectSingleNode(expr);
-			};
-		}
-		else
-		{
-			return function(node, attr, value)
-			{
-				var result = node.ownerDocument.evaluate(
-						'//*[@' + attr + '=\'' + value + '\']',
-						node.ownerDocument, null,
-						XPathResult.ANY_TYPE, null);
-
-				return result.iterateNext();
 			};
 		}
 	}(),
@@ -518,8 +519,19 @@ var mxUtils =
 	 */
 	parseXml: function()
 	{
-		if (mxClient.IS_IE && (typeof(document.documentMode) === 'undefined' || document.documentMode < 9))
+		if (typeof DOMParser != 'undefined')
 		{
+			
+			return function(xml)
+			{
+				var parser = new DOMParser();
+				
+				return parser.parseFromString(xml, 'text/xml');
+			};
+			
+		}
+		else
+		{			
 			return function(xml)
 			{
 				var result = mxUtils.createXmlDocument();
@@ -528,15 +540,6 @@ var mxUtils =
 				result.loadXML(xml);
 				
 				return result;
-			};
-		}
-		else
-		{
-			return function(xml)
-			{
-				var parser = new DOMParser();
-				
-				return parser.parseFromString(xml, 'text/xml');
 			};
 		}
 	}(),
@@ -798,19 +801,7 @@ var mxUtils =
 	 */
 	getInnerHtml: function()
 	{
-		if (mxClient.IS_IE)
-		{
-			return function(node)
-			{
-				if (node != null)
-				{
-					return node.innerHTML;
-				}
-				
-				return '';
-			};
-		}
-		else
+		if (typeof XMLSerializer != 'undefined')
 		{
 			return function(node)
 			{
@@ -818,6 +809,18 @@ var mxUtils =
 				{
 					var serializer = new XMLSerializer();
 					return serializer.serializeToString(node);
+				}
+				
+				return '';
+			};
+		}
+		else
+		{			
+			return function(node)
+			{
+				if (node != null)
+				{
+					return node.innerHTML;
 				}
 				
 				return '';
@@ -838,53 +841,13 @@ var mxUtils =
 	 */
 	getOuterHtml: function()
 	{
-		if (mxClient.IS_IE)
+		if (mxClient.IS_VML)
 		{
 			return function(node)
 			{
 				if (node != null)
 				{
-					if (node.outerHTML != null)
-					{
-						return node.outerHTML;
-					}
-					else
-					{
-						var tmp = [];
-						tmp.push('<'+node.nodeName);
-						
-						var attrs = node.attributes;
-						
-						if (attrs != null)
-						{
-							for (var i = 0; i < attrs.length; i++)
-							{
-								var value = attrs[i].nodeValue;
-								
-								if (value != null && value.length > 0)
-								{
-									tmp.push(' ');
-									tmp.push(attrs[i].nodeName);
-									tmp.push('="');
-									tmp.push(value);
-									tmp.push('"');
-								}
-							}
-						}
-						
-						if (node.innerHTML.length == 0)
-						{
-							tmp.push('/>');
-						}
-						else
-						{
-							tmp.push('>');
-							tmp.push(node.innerHTML);
-							tmp.push('</'+node.nodeName+'>');
-						}
-						
-						return tmp.join('');
-					}
+					return node.outerHTML;
 				}
 				
 				return '';
@@ -1185,7 +1148,7 @@ var mxUtils =
 	open: function(filename)
 	{
 		// Requests required privileges in Firefox
-		if (mxClient.IS_NS)
+		if (typeof netscape != 'undefined')
 		{
 			try
 			{
@@ -1217,7 +1180,7 @@ var mxUtils =
 			
 			return output;
 		}
-		else
+		else if (typeof ActiveXObject != 'undefined')
 		{
 			var activeXObject = new ActiveXObject('Scripting.FileSystemObject');
 			
@@ -1226,6 +1189,10 @@ var mxUtils =
 			newStream.close();
 			
 			return text;
+		}
+		else
+		{
+			mxUtils.alert("Can't open files!");		
 		}
 	},
 	
@@ -1254,7 +1221,7 @@ var mxUtils =
 	 */
 	save: function(filename, content)
 	{
-		if (mxClient.IS_NS)
+		if (typeof netscape != 'undefined')
 		{
 			try
 			{
@@ -1281,13 +1248,15 @@ var mxUtils =
             outputStream.flush();
             outputStream.close();
 		}
-		else
+		else if (typeof ActiveXObject != 'undefined')
 		{
 			var fso = new ActiveXObject('Scripting.FileSystemObject');
 			
 			var file = fso.CreateTextFile(filename, true);
 			file.Write(content);
 			file.Close();
+		} else {
+			mxUtils.alert("Can't save files!");t
 		}
 	},
 
@@ -1323,43 +1292,44 @@ var mxUtils =
 	saveAs: function(content)
 	{
 		var iframe = document.createElement('iframe');
-		iframe.setAttribute('src', '');
+		iframe.src = '';
 		iframe.style.visibility = 'hidden';
-		document.body.appendChild(iframe);
+		document.body.appendChild(iframe);		
 		
-		try
+		if (iframe.contentDocument && typeof saveDocument != 'undefined')
 		{
-			if (mxClient.IS_NS)
+			var doc = iframe.contentDocument;
+			
+			doc.open();
+			doc.write(content);
+			doc.close();
+			
+			try
 			{
-				var doc = iframe.contentDocument;
-				
-				doc.open();
-				doc.write(content);
-				doc.close();
-				
-				try
-				{
-					netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect');
-					// LATER: Remove existing HTML markup in file
-					iframe.focus();
-					saveDocument(doc);
+				if (typeof netscape != 'undefined' && netscape.security && netscape.security.PrivilegeManager) {
+				    netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect');
 				}
-			    catch (e)
-			    {
-			    	mxUtils.alert('Permission to save document denied.');
-			    }
+				iframe.focus();
+				saveDocument(doc);
 			}
-			else
-			{
-				var doc = iframe.contentWindow.document;
-				doc.write(content);
-				doc.execCommand('SaveAs', false, document.location);
-			}
+			catch (e)
+		    {
+		    	mxUtils.alert('Permission to save document denied.');
+		    }
 		}
-		finally
+		else if (doc.execCommand)
 		{
-			document.body.removeChild(iframe);
+			var doc = iframe.contentWindow.document;
+			doc.write(content);
+			doc.execCommand('SaveAs', false, document.location);
 		}
+		else
+		{
+			mxUtils.alert("Can't save files!");			
+		}
+		
+	    document.body.removeChild(iframe);
+		
 	},
 	
 	/**
@@ -1376,11 +1346,11 @@ var mxUtils =
 	 */
 	copy: function(content)
 	{
-	 	if (window.clipboardData)
+	 	if (typeof window.clipboardData != 'undefined' && typeof window.clipboardData.setData != 'undefined')
 	 	{
 			window.clipboardData.setData('Text', content);
 		}
-		else
+		else if (typeof netscape != 'undefined') 
 		{
 			netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect');
 
@@ -1410,7 +1380,10 @@ var mxUtils =
 			var clipid=Components.interfaces.nsIClipboard;
 			
 			clip.setData(trans,null,clipid.kGlobalClipboard);
-		} 
+		} else
+		{
+			mxUtils.alert("Can't copy!");
+		}
 	},
 
 	/**
@@ -1553,20 +1526,12 @@ var mxUtils =
 	 * onload - Function to execute when the URL has been loaded.
 	 */
 	loadInto: function(url, doc, onload)
-	{
-		if (mxClient.IS_IE)
-		{
-			doc.onreadystatechange = function ()
-			{
-				if (doc.readyState == 4)
-				{
-					onload();
-				}
-			};
-		}
-		else
+	{		
+		if (doc.addEventListener)
 		{
 			doc.addEventListener('load', onload, false);
+		} else if (doc.attachEvent) {
+			doc.attachEvent('onload', onload);
 		}
 		
 		doc.load(url);
@@ -2679,7 +2644,10 @@ var mxUtils =
 			    node.style.filter = 'alpha(opacity=' + (value/5) + ')';
 	    	}
 		}
-		else if (mxClient.IS_IE && (typeof(document.documentMode) === 'undefined' || document.documentMode < 9))
+		else if (typeof node.style.opacity == 'string') {
+			node.style.opacity = String(value / 100);
+		}
+		else if (typeof node.style.filter == 'string')
 	    {
 	    	if (value >= 100)
 	    	{
@@ -2690,17 +2658,12 @@ var mxUtils =
 			    node.style.filter = 'alpha(opacity=' + value + ')';
 	    	}
 		}
-		else
-		{
-		    node.style.opacity = (value / 100);
-		}
 	},
 
 	/**
 	 * Function: createImage
 	 * 
-	 * Creates and returns an image (IMG node) or VML image (v:image) in IE6 in
-	 * quirs mode.
+	 * Creates and returns an image (IMG node) or VML image (v:image) 
 	 * 
 	 * Parameters:
 	 * 
@@ -2710,18 +2673,18 @@ var mxUtils =
 	{
         var imageNode = null;
         
-		if (mxClient.IS_IE6 && document.compatMode != 'CSS1Compat')
+		if (mxClient.IS_VML)
 		{
         	imageNode = document.createElement('v:image');
-        	imageNode.setAttribute('src', src);
-        	imageNode.style.borderStyle = 'none';
+        	imageNode.setAttribute('src', src);        	
         }
 		else
 		{
 			imageNode = document.createElement('img');
-			imageNode.setAttribute('src', src);
-			imageNode.setAttribute('border', '0');
+			imageNode.src = src;
 		}
+		
+		imageNode.style.borderStyle = 'none';
 		
 		return imageNode;
 	},
@@ -3445,7 +3408,7 @@ var mxUtils =
 		// to refresh the contents after the external CSS styles have been loaded.
 		// To avoid a click or programmatic refresh, the styleSheets[].cssText
 		// property is copied over from the original document.
-		if (mxClient.IS_IE)
+		if (mxClient.IS_VML)
 		{
 			var html = '<html>';
 			html += '<head>';
@@ -3522,19 +3485,9 @@ var mxUtils =
 				doc.writeln(mxUtils.getOuterHtml(styles[i]));
 			}
 
-			doc.writeln('</head>');
+			doc.writeln('</head><body></body>');			
 			doc.writeln('</html>');
 			doc.close();
-			
-			// Workaround for FF2 which has no body element in a document where
-			// the body has been added using document.write.
-			if (doc.body == null)
-			{
-				doc.documentElement.appendChild(doc.createElement('body'));
-			}
-			
-			// Workaround for missing scrollbars in FF
-			doc.body.style.overflow = 'auto';
 			
 			var node = graph.container.firstChild;
 			
@@ -3588,16 +3541,7 @@ var mxUtils =
 			wnd.close();
 		};
 		
-		// Workaround for Google Chrome which needs a bit of a
-		// delay in order to render the SVG contents
-		if (mxClient.IS_GC)
-		{
-			wnd.setTimeout(print, 500);
-		}
-		else
-		{
-			print();
-		}
+		wnd.setTimeout(print, 500);
 	},
 	
 	/**
@@ -3638,21 +3582,9 @@ var mxUtils =
 		}
 		else
 		{
-			// Wraps up the XML content in a textarea
-			if (mxClient.IS_NS)
-			{
-			    var wnd = window.open();
-				wnd.document.writeln('<pre>'+mxUtils.htmlEntities(content)+'</pre');
-			   	wnd.document.close();
-			}
-			else
-			{
-			    var wnd = window.open();
-			    var pre = wnd.document.createElement('pre');
-			    pre.innerHTML = mxUtils.htmlEntities(content, false).
-			    	replace(/\n/g,'<br>').replace(/ /g, '&nbsp;');
-			   	wnd.document.body.appendChild(pre);
-			}
+			var wnd = window.open();
+	        wnd.document.writeln('<pre>'+mxUtils.htmlEntities(content)+'</pre');
+			wnd.document.close();
 	   	}
 	},
 	
@@ -3747,15 +3679,12 @@ var mxUtils =
 			var tmp = document.createElement('p');
 			var button = document.createElement('button');
 
-			if (mxClient.IS_IE)
-			{
-				button.style.cssText = 'float:right';
+			if (typeof button.style.cssFloat == 'string') {
+				button.style.cssFloat = 'right';	
+			} else if (typeof button.style.styleFloat == 'string') {
+				button.style.styleFloat = 'right';
 			}
-			else
-			{
-				button.setAttribute('style', 'float:right');
-			}
-
+						
 			mxEvent.addListener(button, 'click', function(evt)
 			{
 				warn.destroy();
@@ -3770,6 +3699,8 @@ var mxUtils =
 			mxUtils.br(div);
 			
 			warn.setClosable(true);
+			
+			button = null;
 		}
 		
 		warn.setVisible(true);

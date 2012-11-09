@@ -270,20 +270,16 @@ mxWindow.prototype.init = function(x, y, width, height, style)
 	// Workaround for table size problems in FF
 	if (width != null)
 	{
-		if (!mxClient.IS_IE)
-		{
-			this.div.style.width = width+'px'; 
-		}
+		
+		this.div.style.width = width+'px';
 		
 		this.table.style.width = width+'px';
 	} 
 	
 	if (height != null)
 	{
-		if (!mxClient.IS_IE)
-		{
-			this.div.style.height = height+'px';
-		}
+		
+		this.div.style.height = height+'px';
 		
 		this.table.style.height = height+'px';
 	}		
@@ -306,13 +302,8 @@ mxWindow.prototype.init = function(x, y, width, height, style)
 	this.contentWrapper.className = style+'Pane';
 	this.contentWrapper.style.width = '100%';
 	this.contentWrapper.appendChild(this.content);
-
-	// Workaround for div around div restricts height
-	// of inner div if outerdiv has hidden overflow
-	if (mxClient.IS_IE || this.content.nodeName.toUpperCase() != 'DIV')
-	{
-		this.contentWrapper.style.height = '100%';
-	}
+	
+	this.contentWrapper.style.height = '100%';	
 
 	// Puts all content into the DOM
 	this.td.appendChild(this.contentWrapper);
@@ -367,17 +358,13 @@ mxWindow.prototype.setTitle = function(title)
  */
 mxWindow.prototype.setScrollable = function(scrollable)
 {
-	// Workaround for hang in Presto 2.5.22 (Opera 10.5)
-	if (navigator.userAgent.indexOf('Presto/2.5') < 0)
+	if (scrollable)
 	{
-		if (scrollable)
-		{
-			this.contentWrapper.style.overflow = 'auto';
-		}
-		else
-		{
-			this.contentWrapper.style.overflow = 'hidden';
-		}
+		this.contentWrapper.style.overflow = 'auto';
+	}
+	else
+	{
+		this.contentWrapper.style.overflow = 'hidden';
 	}
 };
 
@@ -529,21 +516,13 @@ mxWindow.prototype.setSize = function(width, height)
 	width = Math.max(this.minimumSize.width, width);
 	height = Math.max(this.minimumSize.height, height);
 
-	// Workaround for table size problems in FF
-	if (!mxClient.IS_IE)
-	{
-		this.div.style.width =  width + 'px';
-		this.div.style.height = height + 'px';
-	}
-	
+	this.div.style.width =  width + 'px';
+	this.div.style.height = height + 'px';
+		
 	this.table.style.width =  width + 'px';
 	this.table.style.height = height + 'px';
 
-	if (!mxClient.IS_IE)
-	{
-		this.contentWrapper.style.height =
-			(this.div.offsetHeight - this.title.offsetHeight - 2)+'px';
-	}
+	this.contentWrapper.style.height = (this.div.offsetHeight - this.title.offsetHeight - 2) + 'px';	
 };
 	
 /**
@@ -576,11 +555,10 @@ mxWindow.prototype.getMinimumSize = function()
 mxWindow.prototype.installMinimizeHandler = function()
 {
 	this.minimize = document.createElement('img');
-	
 	this.minimize.setAttribute('src', this.minimizeImage);
 	this.minimize.setAttribute('align', 'right');
 	this.minimize.setAttribute('title', 'Minimize');
-	this.minimize.style.cursor = 'pointer';
+	this.minimize.style.cursor = 'default';
 	this.minimize.style.marginRight = '1px';
 	this.minimize.style.display = 'none';
 	
@@ -599,7 +577,7 @@ mxWindow.prototype.installMinimizeHandler = function()
 			minimized = true;
 			
 			this.minimize.setAttribute('src', this.normalizeImage);
-			this.minimize.setAttribute('title', 'Normalize');
+			this.minimize.setAttribute('title', 'Restore');
 			this.contentWrapper.style.display = 'none';
 			maxDisplay = this.maximize.style.display;
 			
@@ -610,20 +588,16 @@ mxWindow.prototype.installMinimizeHandler = function()
 			
 			if (minSize.height > 0)
 			{
-				if (!mxClient.IS_IE)
-				{
-					this.div.style.height = minSize.height + 'px';
-				}
+				
+				this.div.style.height = minSize.height + 'px';				
 				
 				this.table.style.height = minSize.height + 'px';
 			}
 			
 			if (minSize.width > 0)
 			{
-				if (!mxClient.IS_IE)
-				{
-					this.div.style.width = minSize.width + 'px';
-				}
+				
+				this.div.style.width = minSize.width + 'px';				
 				
 				this.table.style.width = minSize.width + 'px';
 			}
@@ -644,11 +618,8 @@ mxWindow.prototype.installMinimizeHandler = function()
 			this.contentWrapper.style.display = ''; // default
 			this.maximize.style.display = maxDisplay;
 			
-			if (!mxClient.IS_IE)
-			{
-				this.div.style.height = height;
-			}
-			
+			this.div.style.height = height;
+						
 			this.table.style.height = height;
 
 			if (this.resize != null)
@@ -690,7 +661,7 @@ mxWindow.prototype.installMaximizeHandler = function()
 	this.maximize.setAttribute('title', 'Maximize');
 	this.maximize.style.cursor = 'default';
 	this.maximize.style.marginLeft = '1px';
-	this.maximize.style.cursor = 'pointer';
+	this.maximize.style.cursor = 'auto';
 	this.maximize.style.display = 'none';
 	
 	this.title.appendChild(this.maximize);
@@ -725,31 +696,27 @@ mxWindow.prototype.installMaximizeHandler = function()
 				this.div.style.left = '0px';
 				this.div.style.top = '0px';
 
-				if (!mxClient.IS_IE)
-				{
-					this.div.style.height = (document.body.clientHeight-2)+'px';
-					this.div.style.width = (document.body.clientWidth-2)+'px';
-				}
-
-				this.table.style.width = (document.body.clientWidth-2)+'px';
-				this.table.style.height = (document.body.clientHeight-2)+'px';
+				// FIXME: Assumptions about border widths
+				
+				this.div.style.height = ((document.documentElement.clientHeight || document.body.clientHeight) - 2) + 'px';
+				this.div.style.width = ((document.documentElement.clientWidth || document.body.clientWidth) - 2) + 'px';
+				
+				this.table.style.width = ((document.documentElement.clientWidth || document.body.clientWidth) - 2) + 'px';
+				this.table.style.height = ((document.documentElement.clientHeight || document.body.clientHeight) - 2) + 'px';
 				
 				if (this.resize != null)
 				{
 					this.resize.style.visibility = 'hidden';
 				}
-
-				if (!mxClient.IS_IE)
+				
+				var style = mxUtils.getCurrentStyle(this.contentWrapper);
+	
+				if (style.overflow == 'auto' || this.resize != null)
 				{
-					var style = mxUtils.getCurrentStyle(this.contentWrapper);
-		
-					if (style.overflow == 'auto' || this.resize != null)
-					{
-						this.contentWrapper.style.height =
-							(this.div.offsetHeight - this.title.offsetHeight - 2)+'px';
-					}
+					this.contentWrapper.style.height =
+						(this.div.offsetHeight - this.title.offsetHeight - 2)+'px';
 				}
-
+				
 				this.fireEvent(new mxEventObject(mxEvent.MAXIMIZE, 'event', evt));
 			}
 			else
@@ -765,20 +732,17 @@ mxWindow.prototype.installMaximizeHandler = function()
 				this.div.style.left = x+'px';
 				this.div.style.top = y+'px';
 				
-				if (!mxClient.IS_IE)
-				{
-					this.div.style.height = height;
-					this.div.style.width = width;
+				this.div.style.height = height;
+				this.div.style.width = width;
 
-					var style = mxUtils.getCurrentStyle(this.contentWrapper);
-		
-					if (style.overflow == 'auto' || this.resize != null)
-					{
-						this.contentWrapper.style.height =
-							(this.div.offsetHeight - this.title.offsetHeight - 2)+'px';
-					}
+				var style = mxUtils.getCurrentStyle(this.contentWrapper);
+	
+				if (style.overflow == 'auto' || this.resize != null)
+				{
+					this.contentWrapper.style.height =
+						(this.div.offsetHeight - this.title.offsetHeight - 2)+'px';
 				}
-				
+								
 				this.table.style.height = height;
 				this.table.style.width = width;
 
@@ -892,7 +856,7 @@ mxWindow.prototype.installCloseHandler = function()
 	this.closeImg.setAttribute('align', 'right');
 	this.closeImg.setAttribute('title', 'Close');
 	this.closeImg.style.marginLeft = '2px';
-	this.closeImg.style.cursor = 'pointer';
+	this.closeImg.style.cursor = 'default';
 	this.closeImg.style.display = 'none';
 	
 	this.title.insertBefore(this.closeImg, this.title.firstChild);
@@ -1001,7 +965,7 @@ mxWindow.prototype.show = function()
 	
 	var style = mxUtils.getCurrentStyle(this.contentWrapper);
 	
-	if (!mxClient.IS_IE && (style.overflow == 'auto' || this.resize != null))
+	if (style.overflow == 'auto' || this.resize != null)
 	{
 		this.contentWrapper.style.height =
 			(this.div.offsetHeight - this.title.offsetHeight - 2)+'px';

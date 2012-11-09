@@ -2,8 +2,22 @@
  * $Id: mxClient.js,v 1.203 2012-07-19 15:19:07 gaudenz Exp $
  * Copyright (c) 2006-2010, JGraph Ltd
  */
-var mxClient =
-{
+var mxClient = (function() {
+	
+    var IS_IE = (document.attachEvent && !document.addEventListener) || typeof document.documentMode == 'number';
+    
+    var IS_VML = (function() {
+        var el = document.createElement('div');
+        el.innerHTML = '<v:shape id="vml_flag1" adj="1" />';
+        var elFirstChild = el.firstChild;
+        if (elFirstChild) {
+            elFirstChild.style.behavior = "url(#default#VML)";
+            return typeof elFirstChild.adj == "object";
+        }
+        return false;
+    })();
+	
+    var result = {
 
 	/**
 	 * Class: mxClient
@@ -27,39 +41,43 @@ var mxClient =
 
 	/**
 	 * Variable: IS_IE
+	 * Deprecated
 	 *
 	 * True if the current browser is Internet Explorer.
 	 */
-	IS_IE: navigator.userAgent.indexOf('MSIE') >= 0,
+	IS_IE: IS_IE,
 
 	/**
 	 * Variable: IS_IE6
+	 * Deprecated
 	 *
 	 * True if the current browser is Internet Explorer 6.x.
 	 */
-	IS_IE6: navigator.userAgent.indexOf('MSIE 6') >= 0,
+	IS_IE6: IS_IE && !window.XMLHttpRequest,
 
 	/**
-	 * Variable: IS_QUIRKS
+	 * Variable: IS_QUIRKS (IS_IE_QUIRKS is a better name)
+	 * Deprecated
 	 *
 	 * True if the current browser is Internet Explorer and it is in quirks mode.
 	 */
-	IS_QUIRKS: navigator.userAgent.indexOf('MSIE') >= 0 && (document.documentMode == null || document.documentMode == 5),
+	IS_QUIRKS: IS_IE && (typeof document.compatMode == 'undefined' || document.compatMode == 'BackCompat'),
 
 	/**
 	 * Variable: IS_NS
+	 * Deprecated
 	 *
 	 * True if the current browser is Netscape (including Firefox).
 	 */
-  	IS_NS: navigator.userAgent.indexOf('Mozilla/') >= 0 &&
-  		navigator.userAgent.indexOf('MSIE') < 0,
+    IS_NS: navigator.userAgent.indexOf('Mozilla/') >= 0 && navigator.userAgent.indexOf('MSIE') < 0,
 
 	/**
 	 * Variable: IS_OP
+	 * Deprecated
 	 *
 	 * True if the current browser is Opera.
 	 */
-  	IS_OP: navigator.userAgent.indexOf('Opera/') >= 0,
+    IS_OP: !!window.opera,
 
 	/**
 	 * Variable: IS_OT
@@ -67,28 +85,24 @@ var mxClient =
 	 * True if -o-transform is available as a CSS style. This is the case
 	 * for Opera browsers that use Presto/2.5 and later.
 	 */
-  	IS_OT: navigator.userAgent.indexOf('Presto/2.4.') < 0 &&
-  		navigator.userAgent.indexOf('Presto/2.3.') < 0 &&
-  		navigator.userAgent.indexOf('Presto/2.2.') < 0 &&
-  		navigator.userAgent.indexOf('Presto/2.1.') < 0 &&
-  		navigator.userAgent.indexOf('Presto/2.0.') < 0 &&
-  		navigator.userAgent.indexOf('Presto/1.') < 0,
-  	
+    IS_OT: typeof document.documentElement.style.OTransform != 'undefined',
+    
 	/**
 	 * Variable: IS_SF
+	 * Deprecated
 	 *
 	 * True if the current browser is Safari.
 	 */
-  	IS_SF: navigator.userAgent.indexOf('AppleWebKit/') >= 0 &&
-  		navigator.userAgent.indexOf('Chrome/') < 0,
-  	
+    IS_SF: navigator.userAgent.indexOf('AppleWebKit/') >= 0 && navigator.userAgent.indexOf('Chrome/') < 0,
+
 	/**
 	 * Variable: IS_GC
+	 * Deprecated
 	 *
 	 * True if the current browser is Google Chrome.
 	 */
-  	IS_GC: navigator.userAgent.indexOf('Chrome/') >= 0,
-  	
+    IS_GC: navigator.userAgent.indexOf('Chrome/') >= 0,
+
 	/**
 	 * Variable: IS_MT
 	 *
@@ -96,41 +110,24 @@ var mxClient =
 	 * for all Firefox-based browsers newer than or equal 3, such as Camino,
 	 * Iceweasel, Seamonkey and Iceape.
 	 */
-  	IS_MT: (navigator.userAgent.indexOf('Firefox/') >= 0 &&
-		navigator.userAgent.indexOf('Firefox/1.') < 0 &&
-  		navigator.userAgent.indexOf('Firefox/2.') < 0) ||
-  		(navigator.userAgent.indexOf('Iceweasel/') >= 0 &&
-  		navigator.userAgent.indexOf('Iceweasel/1.') < 0 &&
-  		navigator.userAgent.indexOf('Iceweasel/2.') < 0) ||
-  		(navigator.userAgent.indexOf('SeaMonkey/') >= 0 &&
-  		navigator.userAgent.indexOf('SeaMonkey/1.') < 0) ||
-  		(navigator.userAgent.indexOf('Iceape/') >= 0 &&
-  		navigator.userAgent.indexOf('Iceape/1.') < 0),
+    IS_MT: typeof document.documentElement.style.MozTransform != 'undefined',
 
 	/**
 	 * Variable: IS_SVG
 	 *
 	 * True if the browser supports SVG.
 	 */
-  	IS_SVG: navigator.userAgent.indexOf('Firefox/') >= 0 || // FF and Camino
-	  	navigator.userAgent.indexOf('Iceweasel/') >= 0 || // Firefox on Debian
-	  	navigator.userAgent.indexOf('Seamonkey/') >= 0 || // Firefox-based
-	  	navigator.userAgent.indexOf('Iceape/') >= 0 || // Seamonkey on Debian
-	  	navigator.userAgent.indexOf('Galeon/') >= 0 || // Gnome Browser (old)
-	  	navigator.userAgent.indexOf('Epiphany/') >= 0 || // Gnome Browser (new)
-	  	navigator.userAgent.indexOf('AppleWebKit/') >= 0 || // Safari/Google Chrome
-	  	navigator.userAgent.indexOf('Gecko/') >= 0 || // Netscape/Gecko
-	  	navigator.userAgent.indexOf('Opera/') >= 0,
-	  	
-  	 
+    IS_SVG: !!document.createElementNS && !!document.createElementNS('http://www.w3.org/2000/svg', "svg").createSVGRect,
+    IS_VML_BAD: IS_VML && document.documentMode == 8,
 	/**
 	 * Variable: NO_FO
+	 * Deprecated
 	 *
 	 * True if foreignObject support is not available. This is the case for
 	 * Opera and older SVG-based browsers. IE does not require this type
 	 * of tag.
 	 */
-  	NO_FO: navigator.userAgent.indexOf('Firefox/1.') >= 0 ||
+    NO_FO: navigator.userAgent.indexOf('Firefox/1.') >= 0 ||
   		navigator.userAgent.indexOf('Iceweasel/1.') >= 0 ||
   		navigator.userAgent.indexOf('Firefox/2.') >= 0 ||
 	  	navigator.userAgent.indexOf('Iceweasel/2.') >= 0 ||
@@ -147,10 +144,11 @@ var mxClient =
 	 *
 	 * True if the browser supports VML.
 	 */
-  	IS_VML: navigator.appName.toUpperCase() == 'MICROSOFT INTERNET EXPLORER',
+	IS_VML: IS_VML,
 
 	/**
 	 * Variable: IS_MAC
+	 * Deprecated
 	 *
 	 * True if the client is a Mac.
 	 */
@@ -158,14 +156,27 @@ var mxClient =
 
 	/**
 	 * Variable: IS_TOUCH
+	 * Deprecated
 	 *
 	 * True if this client uses a touch interface (no mouse). Currently this
 	 * detects IPads, IPods, IPhones and Android devices.
 	 */
-  	IS_TOUCH: navigator.userAgent.toUpperCase().indexOf('IPAD') > 0 ||
-  			  navigator.userAgent.toUpperCase().indexOf('IPOD') > 0 ||
-  			  navigator.userAgent.toUpperCase().indexOf('IPHONE') > 0 ||
-  			  navigator.userAgent.toUpperCase().indexOf('ANDROID') > 0,
+  	IS_TOUCH: (function() {
+  		
+  		// NOTE: Known to "false" in some older Chrome versions
+  		//       Preferable to a UA sniff for our immediate purposes
+  		
+  	    // FIXME: Mouse/touch switching (need to attach both)
+  		
+		var el = document.createElement('div');
+	    if (el && el.setAttribute) {
+	      if (typeof el.ontouchstart == 'undefined') {
+	        el.setAttribute('ontouchstart', 'window.alert(" ");');
+	        return typeof el.ontouchstart == 'function';
+	      }
+	    }
+	    return false;
+  	})(),
 
 	/**
 	 * Variable: IS_LOCAL
@@ -215,26 +226,12 @@ var mxClient =
 	 * doc - Optional parent document of the link node.
 	 */
 	link: function(rel, href, doc)
-	{
-		doc = doc || document;
-
-		// Workaround for Operation Aborted in IE6 if base tag is used in head
-		if (mxClient.IS_IE6)
-		{
-			doc.write('<link rel="'+rel+'" href="'+href+'" charset="ISO-8859-1" type="text/css"/>');
-		}
-		else
-		{	
-			var link = doc.createElement('link');
-			
-			link.setAttribute('rel', rel);
-			link.setAttribute('href', href);
-			link.setAttribute('charset', 'ISO-8859-1');
-			link.setAttribute('type', 'text/css');
-			
-			var head = doc.getElementsByTagName('head')[0];
-	   		head.appendChild(link);
-		}
+	{		
+		// Use document.write as MXGraph script(s) may be in the HEAD
+		// Not a good idea to mutate a DOM structure while it is still parsing
+		// See: IE Operation Aborted
+		
+		(doc || document).write('<link rel="'+rel+'" href="'+href+'" type="text/css"/>');
 	},
 	
 	/**
@@ -249,15 +246,19 @@ var mxClient =
 	 */
 	include: function(src)
 	{
-		document.write('<script src="'+src+'"></script>');
+		document.write('<script type="text/javascript" src="' + src + '"><\/script>');
 	},
 	
 	/**
 	 * Function: dispose
+	 * Deprecated
 	 * 
 	 * Frees up memory in IE by resolving cyclic dependencies between the DOM
 	 * and the JavaScript objects. This is always invoked in IE when the page
 	 * unloads.
+	 * 
+	 * FIXME: Don't create cyclic dependencies between...
+	 * 
 	 */
 	dispose: function()
 	{
@@ -287,7 +288,8 @@ var mxClient =
  * <script type="text/javascript" src="/path/to/core/directory/js/mxClient.js"></script>
  * (end)
  */
-if (typeof(mxLoadResources) == 'undefined')
+
+if (typeof mxLoadResources == 'undefined')
 {
 	mxLoadResources = true;
 }
@@ -306,7 +308,8 @@ if (typeof(mxLoadResources) == 'undefined')
  * <script type="text/javascript" src="/path/to/core/directory/js/mxClient.js"></script>
  * (end)
  */
-if (typeof(mxLoadStylesheets) == 'undefined')
+
+if (typeof mxLoadStylesheets == 'undefined')
 {
 	mxLoadStylesheets = true;
 }
@@ -328,7 +331,8 @@ if (typeof(mxLoadStylesheets) == 'undefined')
  * When using a relative path, the path is relative to the URL of the page that
  * contains the assignment. Trailing slashes are automatically removed.
  */
-if (typeof(mxBasePath) != 'undefined' && mxBasePath.length > 0)
+
+if (typeof mxBasePath != 'undefined' && mxBasePath.length > 0)
 {
 	// Adds a trailing slash if required
 	if (mxBasePath.substring(mxBasePath.length - 1) == '/')
@@ -336,11 +340,11 @@ if (typeof(mxBasePath) != 'undefined' && mxBasePath.length > 0)
 		mxBasePath = mxBasePath.substring(0, mxBasePath.length - 1);
 	}
 
-	mxClient.basePath = mxBasePath;
+	result.basePath = mxBasePath;
 }
 else
 {
-	mxClient.basePath = '.';
+	result.basePath = '.';
 }
 
 /**
@@ -360,6 +364,7 @@ else
  * When using a relative path, the path is relative to the URL of the page that
  * contains the assignment. Trailing slashes are automatically removed.
  */
+
 if (typeof(mxImageBasePath) != 'undefined' && mxImageBasePath.length > 0)
 {
 	// Adds a trailing slash if required
@@ -368,11 +373,11 @@ if (typeof(mxImageBasePath) != 'undefined' && mxImageBasePath.length > 0)
 		mxImageBasePath = mxImageBasePath.substring(0, mxImageBasePath.length - 1);
 	}
 
-	mxClient.imageBasePath = mxImageBasePath;
+	result.imageBasePath = mxImageBasePath;
 }
 else
 {
-	mxClient.imageBasePath = mxClient.basePath + '/images';	
+	result.imageBasePath = result.basePath + '/images';	
 }
 
 /**
@@ -406,13 +411,14 @@ else
  * <mxGraph.containsValidationErrorsResource> and
  * <mxGraph.alreadyConnectedResource>.
  */
-if (typeof(mxLanguage) != 'undefined')
+
+if (typeof mxLanguage != 'undefined')
 {
-	mxClient.language = mxLanguage;
+	result.language = mxLanguage;
 }
 else
 {
-	mxClient.language = (mxClient.IS_IE) ? navigator.userLanguage : navigator.language;
+	result.language = navigator.userLanguage || navigator.language || 'en';
 }
 
 /**
@@ -432,19 +438,21 @@ else
  * <script type="text/javascript" src="js/mxClient.js"></script>
  * (end)
  */
-if (typeof(mxDefaultLanguage) != 'undefined')
+
+if (typeof mxDefaultLanguage != 'undefined')
 {
-	mxClient.defaultLanguage = mxDefaultLanguage;
+	result.defaultLanguage = mxDefaultLanguage;
 }
 else
 {
-	mxClient.defaultLanguage = 'en';
+	result.defaultLanguage = 'en';
 }
 
 // Adds all required stylesheets and namespaces
+
 if (mxLoadStylesheets)
 {
-	mxClient.link('stylesheet', mxClient.basePath + '/css/common.css');
+	result.link('stylesheet', result.basePath + '/css/common.css');
 }
 
 /**
@@ -456,7 +464,7 @@ if (mxLoadStylesheets)
  *
  * (code)
  * <script type="text/javascript">
- * 		mxLanguages = ['de', 'it', 'fr'];
+ * 		var mxLanguages = ['de', 'it', 'fr'];
  * </script>
  * <script type="text/javascript" src="js/mxClient.js"></script>
  * (end)
@@ -464,180 +472,181 @@ if (mxLoadStylesheets)
  * This is used to avoid unnecessary requests to language files, ie. if a 404
  * will be returned.
  */
-if (typeof(mxLanguages) != 'undefined')
+
+if (typeof mxLanguages != 'undefined')
 {
 	mxClient.languages = mxLanguages;
 }
 
-if (mxClient.IS_IE)
+if (result.IS_VML && typeof document.namespaces != 'undefined' && typeof document.namespaces.add != 'undefined' && typeof document.createStyleSheet != 'undefined')
 {
-	// IE9/10 standards mode uses SVG (VML is broken)
-	if (document.documentMode >= 9)
+
+	// Enables support for IE8 standards mode. Note that this requires all attributes for VML
+	// elements to be set using direct notation, ie. node.attr = value. The use of setAttribute
+	// is not possible. See mxShape.init for more code to handle this specific document mode.
+			
+	if (result.IS_VML_BAD)
 	{
-		mxClient.IS_VML = false;
-		mxClient.IS_SVG = true;
+		document.namespaces.add('v', 'urn:schemas-microsoft-com:vml', '#default#VML');
+		document.namespaces.add('o', 'urn:schemas-microsoft-com:office:office', '#default#VML');
 	}
 	else
 	{
-		// Enables support for IE8 standards mode. Note that this requires all attributes for VML
-		// elements to be set using direct notation, ie. node.attr = value. The use of setAttribute
-		// is not possible. See mxShape.init for more code to handle this specific document mode.
-		if (document.documentMode == 8)
-		{
-			document.namespaces.add('v', 'urn:schemas-microsoft-com:vml', '#default#VML');
-			document.namespaces.add('o', 'urn:schemas-microsoft-com:office:office', '#default#VML');
-		}
-		else
-		{
-			document.namespaces.add('v', 'urn:schemas-microsoft-com:vml');
-			document.namespaces.add('o', 'urn:schemas-microsoft-com:office:office');
-		}
-		
-        var ss = document.createStyleSheet();
-        ss.cssText = 'v\\:*{behavior:url(#default#VML)}o\\:*{behavior:url(#default#VML)}';
-        
-        if (mxLoadStylesheets)
-        {
-        	mxClient.link('stylesheet', mxClient.basePath + '/css/explorer.css');
-        }
+		document.namespaces.add('v', 'urn:schemas-microsoft-com:vml');
+		document.namespaces.add('o', 'urn:schemas-microsoft-com:office:office');
 	}
+	
+    var ss = document.createStyleSheet();
+    ss.cssText = 'v\\:*{behavior:url(#default#VML)}o\\:*{behavior:url(#default#VML)}';
+    
+    if (mxLoadStylesheets)
+    {
+    	result.link('stylesheet', result.basePath + '/css/explorer.css');
+    }
 
-	// Cleans up resources when the application terminates
-	window.attachEvent('onunload', mxClient.dispose);
+	// Cleans up resources when the application terminates (IE 8-)
+            
+    if (window.attachEvent && !window.addEventListener) {
+		window.attachEvent('onunload', result.dispose);
+	}
 }
 
-mxClient.include(mxClient.basePath+'/js/util/mxLog.js');
-mxClient.include(mxClient.basePath+'/js/util/mxObjectIdentity.js');
-mxClient.include(mxClient.basePath+'/js/util/mxDictionary.js');
-mxClient.include(mxClient.basePath+'/js/util/mxResources.js');
-mxClient.include(mxClient.basePath+'/js/util/mxPoint.js');
-mxClient.include(mxClient.basePath+'/js/util/mxRectangle.js');
-mxClient.include(mxClient.basePath+'/js/util/mxEffects.js');
-mxClient.include(mxClient.basePath+'/js/util/mxUtils.js');
-mxClient.include(mxClient.basePath+'/js/util/mxConstants.js');
-mxClient.include(mxClient.basePath+'/js/util/mxEventObject.js');
-mxClient.include(mxClient.basePath+'/js/util/mxMouseEvent.js');
-mxClient.include(mxClient.basePath+'/js/util/mxEventSource.js');
-mxClient.include(mxClient.basePath+'/js/util/mxEvent.js');
-mxClient.include(mxClient.basePath+'/js/util/mxXmlRequest.js');
-mxClient.include(mxClient.basePath+'/js/util/mxClipboard.js');
-mxClient.include(mxClient.basePath+'/js/util/mxWindow.js');
-mxClient.include(mxClient.basePath+'/js/util/mxForm.js');
-mxClient.include(mxClient.basePath+'/js/util/mxImage.js');
-mxClient.include(mxClient.basePath+'/js/util/mxDivResizer.js');
-mxClient.include(mxClient.basePath+'/js/util/mxDragSource.js');
-mxClient.include(mxClient.basePath+'/js/util/mxToolbar.js');
-mxClient.include(mxClient.basePath+'/js/util/mxSession.js');
-mxClient.include(mxClient.basePath+'/js/util/mxUndoableEdit.js');
-mxClient.include(mxClient.basePath+'/js/util/mxUndoManager.js');
-mxClient.include(mxClient.basePath+'/js/util/mxUrlConverter.js');
-mxClient.include(mxClient.basePath+'/js/util/mxPanningManager.js');
-mxClient.include(mxClient.basePath+'/js/util/mxPath.js');
-mxClient.include(mxClient.basePath+'/js/util/mxPopupMenu.js');
-mxClient.include(mxClient.basePath+'/js/util/mxAutoSaveManager.js');
-mxClient.include(mxClient.basePath+'/js/util/mxAnimation.js');
-mxClient.include(mxClient.basePath+'/js/util/mxMorphing.js');
-mxClient.include(mxClient.basePath+'/js/util/mxImageBundle.js');
-mxClient.include(mxClient.basePath+'/js/util/mxImageExport.js');
-mxClient.include(mxClient.basePath+'/js/util/mxXmlCanvas2D.js');
-mxClient.include(mxClient.basePath+'/js/util/mxSvgCanvas2D.js');
-mxClient.include(mxClient.basePath+'/js/util/mxGuide.js');
-mxClient.include(mxClient.basePath+'/js/shape/mxShape.js');
-mxClient.include(mxClient.basePath+'/js/shape/mxStencil.js');
-mxClient.include(mxClient.basePath+'/js/shape/mxStencilRegistry.js');
-mxClient.include(mxClient.basePath+'/js/shape/mxStencilShape.js');
-mxClient.include(mxClient.basePath+'/js/shape/mxMarker.js');
-mxClient.include(mxClient.basePath+'/js/shape/mxActor.js');
-mxClient.include(mxClient.basePath+'/js/shape/mxCloud.js');
-mxClient.include(mxClient.basePath+'/js/shape/mxRectangleShape.js');
-mxClient.include(mxClient.basePath+'/js/shape/mxEllipse.js');
-mxClient.include(mxClient.basePath+'/js/shape/mxDoubleEllipse.js');
-mxClient.include(mxClient.basePath+'/js/shape/mxRhombus.js');
-mxClient.include(mxClient.basePath+'/js/shape/mxPolyline.js');
-mxClient.include(mxClient.basePath+'/js/shape/mxArrow.js');
-mxClient.include(mxClient.basePath+'/js/shape/mxText.js');
-mxClient.include(mxClient.basePath+'/js/shape/mxTriangle.js');
-mxClient.include(mxClient.basePath+'/js/shape/mxHexagon.js');
-mxClient.include(mxClient.basePath+'/js/shape/mxLine.js');
-mxClient.include(mxClient.basePath+'/js/shape/mxImageShape.js');
-mxClient.include(mxClient.basePath+'/js/shape/mxLabel.js');
-mxClient.include(mxClient.basePath+'/js/shape/mxCylinder.js');
-mxClient.include(mxClient.basePath+'/js/shape/mxConnector.js');
-mxClient.include(mxClient.basePath+'/js/shape/mxSwimlane.js');
-mxClient.include(mxClient.basePath+'/js/layout/mxGraphLayout.js');
-mxClient.include(mxClient.basePath+'/js/layout/mxStackLayout.js');
-mxClient.include(mxClient.basePath+'/js/layout/mxPartitionLayout.js');
-mxClient.include(mxClient.basePath+'/js/layout/mxCompactTreeLayout.js');
-mxClient.include(mxClient.basePath+'/js/layout/mxFastOrganicLayout.js');
-mxClient.include(mxClient.basePath+'/js/layout/mxCircleLayout.js');
-mxClient.include(mxClient.basePath+'/js/layout/mxParallelEdgeLayout.js');
-mxClient.include(mxClient.basePath+'/js/layout/mxCompositeLayout.js');
-mxClient.include(mxClient.basePath+'/js/layout/mxEdgeLabelLayout.js');
-mxClient.include(mxClient.basePath+'/js/layout/hierarchical/model/mxGraphAbstractHierarchyCell.js');
-mxClient.include(mxClient.basePath+'/js/layout/hierarchical/model/mxGraphHierarchyNode.js');
-mxClient.include(mxClient.basePath+'/js/layout/hierarchical/model/mxGraphHierarchyEdge.js');
-mxClient.include(mxClient.basePath+'/js/layout/hierarchical/model/mxGraphHierarchyModel.js');
-mxClient.include(mxClient.basePath+'/js/layout/hierarchical/stage/mxHierarchicalLayoutStage.js');
-mxClient.include(mxClient.basePath+'/js/layout/hierarchical/stage/mxMedianHybridCrossingReduction.js');
-mxClient.include(mxClient.basePath+'/js/layout/hierarchical/stage/mxMinimumCycleRemover.js');
-mxClient.include(mxClient.basePath+'/js/layout/hierarchical/stage/mxCoordinateAssignment.js');
-mxClient.include(mxClient.basePath+'/js/layout/hierarchical/mxHierarchicalLayout.js');
-mxClient.include(mxClient.basePath+'/js/model/mxGraphModel.js');
-mxClient.include(mxClient.basePath+'/js/model/mxCell.js');
-mxClient.include(mxClient.basePath+'/js/model/mxGeometry.js');
-mxClient.include(mxClient.basePath+'/js/model/mxCellPath.js');
-mxClient.include(mxClient.basePath+'/js/view/mxPerimeter.js');
-mxClient.include(mxClient.basePath+'/js/view/mxPrintPreview.js');
-mxClient.include(mxClient.basePath+'/js/view/mxStylesheet.js');
-mxClient.include(mxClient.basePath+'/js/view/mxCellState.js');
-mxClient.include(mxClient.basePath+'/js/view/mxGraphSelectionModel.js');
-mxClient.include(mxClient.basePath+'/js/view/mxCellEditor.js');
-mxClient.include(mxClient.basePath+'/js/view/mxCellRenderer.js');
-mxClient.include(mxClient.basePath+'/js/view/mxEdgeStyle.js');
-mxClient.include(mxClient.basePath+'/js/view/mxStyleRegistry.js');
-mxClient.include(mxClient.basePath+'/js/view/mxGraphView.js');
-mxClient.include(mxClient.basePath+'/js/view/mxGraph.js');
-mxClient.include(mxClient.basePath+'/js/view/mxCellOverlay.js');
-mxClient.include(mxClient.basePath+'/js/view/mxOutline.js');
-mxClient.include(mxClient.basePath+'/js/view/mxMultiplicity.js');
-mxClient.include(mxClient.basePath+'/js/view/mxLayoutManager.js');
-mxClient.include(mxClient.basePath+'/js/view/mxSpaceManager.js');
-mxClient.include(mxClient.basePath+'/js/view/mxSwimlaneManager.js');
-mxClient.include(mxClient.basePath+'/js/view/mxTemporaryCellStates.js');
-mxClient.include(mxClient.basePath+'/js/view/mxCellStatePreview.js');
-mxClient.include(mxClient.basePath+'/js/view/mxConnectionConstraint.js');
-mxClient.include(mxClient.basePath+'/js/handler/mxGraphHandler.js');
-mxClient.include(mxClient.basePath+'/js/handler/mxPanningHandler.js');
-mxClient.include(mxClient.basePath+'/js/handler/mxCellMarker.js');
-mxClient.include(mxClient.basePath+'/js/handler/mxSelectionCellsHandler.js');
-mxClient.include(mxClient.basePath+'/js/handler/mxConnectionHandler.js');
-mxClient.include(mxClient.basePath+'/js/handler/mxConstraintHandler.js');
-mxClient.include(mxClient.basePath+'/js/handler/mxRubberband.js');
-mxClient.include(mxClient.basePath+'/js/handler/mxVertexHandler.js');
-mxClient.include(mxClient.basePath+'/js/handler/mxEdgeHandler.js');
-mxClient.include(mxClient.basePath+'/js/handler/mxElbowEdgeHandler.js');
-mxClient.include(mxClient.basePath+'/js/handler/mxEdgeSegmentHandler.js');
-mxClient.include(mxClient.basePath+'/js/handler/mxKeyHandler.js');
-mxClient.include(mxClient.basePath+'/js/handler/mxTooltipHandler.js');
-mxClient.include(mxClient.basePath+'/js/handler/mxCellTracker.js');
-mxClient.include(mxClient.basePath+'/js/handler/mxCellHighlight.js');
-mxClient.include(mxClient.basePath+'/js/editor/mxDefaultKeyHandler.js');
-mxClient.include(mxClient.basePath+'/js/editor/mxDefaultPopupMenu.js');
-mxClient.include(mxClient.basePath+'/js/editor/mxDefaultToolbar.js');
-mxClient.include(mxClient.basePath+'/js/editor/mxEditor.js');
-mxClient.include(mxClient.basePath+'/js/io/mxCodecRegistry.js');
-mxClient.include(mxClient.basePath+'/js/io/mxCodec.js');
-mxClient.include(mxClient.basePath+'/js/io/mxObjectCodec.js');
-mxClient.include(mxClient.basePath+'/js/io/mxCellCodec.js');
-mxClient.include(mxClient.basePath+'/js/io/mxModelCodec.js');
-mxClient.include(mxClient.basePath+'/js/io/mxRootChangeCodec.js');
-mxClient.include(mxClient.basePath+'/js/io/mxChildChangeCodec.js');
-mxClient.include(mxClient.basePath+'/js/io/mxTerminalChangeCodec.js');
-mxClient.include(mxClient.basePath+'/js/io/mxGenericChangeCodec.js');
-mxClient.include(mxClient.basePath+'/js/io/mxGraphCodec.js');
-mxClient.include(mxClient.basePath+'/js/io/mxGraphViewCodec.js');
-mxClient.include(mxClient.basePath+'/js/io/mxStylesheetCodec.js');
-mxClient.include(mxClient.basePath+'/js/io/mxDefaultKeyHandlerCodec.js');
-mxClient.include(mxClient.basePath+'/js/io/mxDefaultToolbarCodec.js');
-mxClient.include(mxClient.basePath+'/js/io/mxDefaultPopupMenuCodec.js');
-mxClient.include(mxClient.basePath+'/js/io/mxEditorCodec.js');
+result.include(result.basePath+'/js/util/mxLog.js');
+result.include(result.basePath+'/js/util/mxObjectIdentity.js');
+result.include(result.basePath+'/js/util/mxDictionary.js');
+result.include(result.basePath+'/js/util/mxResources.js');
+result.include(result.basePath+'/js/util/mxPoint.js');
+result.include(result.basePath+'/js/util/mxRectangle.js');
+//result.include(result.basePath+'/js/util/mxEffects.js');
+result.include(result.basePath+'/js/util/mxUtils.js');
+result.include(result.basePath+'/js/util/mxConstants.js');
+result.include(result.basePath+'/js/util/mxEventObject.js');
+result.include(result.basePath+'/js/util/mxMouseEvent.js');
+result.include(result.basePath+'/js/util/mxEventSource.js');
+result.include(result.basePath+'/js/util/mxEvent.js');
+//result.include(result.basePath+'/js/util/mxXmlRequest.js');
+//result.include(result.basePath+'/js/util/mxClipboard.js');
+result.include(result.basePath+'/js/util/mxWindow.js');
+result.include(result.basePath+'/js/util/mxForm.js');
+result.include(result.basePath+'/js/util/mxImage.js');
+result.include(result.basePath+'/js/util/mxDivResizer.js');
+//result.include(result.basePath+'/js/util/mxDragSource.js');
+//result.include(result.basePath+'/js/util/mxToolbar.js');
+result.include(result.basePath+'/js/util/mxSession.js');
+result.include(result.basePath+'/js/util/mxUndoableEdit.js');
+result.include(result.basePath+'/js/util/mxUndoManager.js');
+result.include(result.basePath+'/js/util/mxUrlConverter.js');
+//result.include(result.basePath+'/js/util/mxPanningManager.js');
+result.include(result.basePath+'/js/util/mxPath.js');
+//result.include(result.basePath+'/js/util/mxPopupMenu.js');
+result.include(result.basePath+'/js/util/mxAutoSaveManager.js');
+//result.include(result.basePath+'/js/util/mxAnimation.js');
+//result.include(result.basePath+'/js/util/mxMorphing.js');
+result.include(result.basePath+'/js/util/mxImageBundle.js');
+result.include(result.basePath+'/js/util/mxImageExport.js');
+result.include(result.basePath+'/js/util/mxXmlCanvas2D.js');
+result.include(result.basePath+'/js/util/mxSvgCanvas2D.js');
+result.include(result.basePath+'/js/util/mxGuide.js');
+result.include(result.basePath+'/js/shape/mxShape.js');
+result.include(result.basePath+'/js/shape/mxStencil.js');
+result.include(result.basePath+'/js/shape/mxStencilRegistry.js');
+result.include(result.basePath+'/js/shape/mxStencilShape.js');
+result.include(result.basePath+'/js/shape/mxMarker.js');
+result.include(result.basePath+'/js/shape/mxActor.js');
+result.include(result.basePath+'/js/shape/mxCloud.js');
+result.include(result.basePath+'/js/shape/mxRectangleShape.js');
+result.include(result.basePath+'/js/shape/mxEllipse.js');
+result.include(result.basePath+'/js/shape/mxDoubleEllipse.js');
+result.include(result.basePath+'/js/shape/mxRhombus.js');
+result.include(result.basePath+'/js/shape/mxPolyline.js');
+result.include(result.basePath+'/js/shape/mxArrow.js');
+result.include(result.basePath+'/js/shape/mxText.js');
+result.include(result.basePath+'/js/shape/mxTriangle.js');
+result.include(result.basePath+'/js/shape/mxHexagon.js');
+result.include(result.basePath+'/js/shape/mxLine.js');
+result.include(result.basePath+'/js/shape/mxImageShape.js');
+result.include(result.basePath+'/js/shape/mxLabel.js');
+result.include(result.basePath+'/js/shape/mxCylinder.js');
+result.include(result.basePath+'/js/shape/mxConnector.js');
+result.include(result.basePath+'/js/shape/mxSwimlane.js');
+result.include(result.basePath+'/js/layout/mxGraphLayout.js');
+result.include(result.basePath+'/js/layout/mxStackLayout.js');
+//result.include(result.basePath+'/js/layout/mxPartitionLayout.js');
+//result.include(result.basePath+'/js/layout/mxCompactTreeLayout.js');
+//result.include(result.basePath+'/js/layout/mxFastOrganicLayout.js');
+//result.include(result.basePath+'/js/layout/mxCircleLayout.js');
+//result.include(result.basePath+'/js/layout/mxParallelEdgeLayout.js');
+//result.include(result.basePath+'/js/layout/mxCompositeLayout.js');
+//result.include(result.basePath+'/js/layout/mxEdgeLabelLayout.js');
+//result.include(result.basePath+'/js/layout/hierarchical/model/mxGraphAbstractHierarchyCell.js');
+//result.include(result.basePath+'/js/layout/hierarchical/model/mxGraphHierarchyNode.js');
+//result.include(result.basePath+'/js/layout/hierarchical/model/mxGraphHierarchyEdge.js');
+//result.include(result.basePath+'/js/layout/hierarchical/model/mxGraphHierarchyModel.js');
+//result.include(result.basePath+'/js/layout/hierarchical/stage/mxHierarchicalLayoutStage.js');
+//result.include(result.basePath+'/js/layout/hierarchical/stage/mxMedianHybridCrossingReduction.js');
+//result.include(result.basePath+'/js/layout/hierarchical/stage/mxMinimumCycleRemover.js');
+//result.include(result.basePath+'/js/layout/hierarchical/stage/mxCoordinateAssignment.js');
+//result.include(result.basePath+'/js/layout/hierarchical/mxHierarchicalLayout.js');
+result.include(result.basePath+'/js/model/mxGraphModel.js');
+result.include(result.basePath+'/js/model/mxCell.js');
+result.include(result.basePath+'/js/model/mxGeometry.js');
+result.include(result.basePath+'/js/model/mxCellPath.js');
+result.include(result.basePath+'/js/view/mxPerimeter.js');
+//result.include(result.basePath+'/js/view/mxPrintPreview.js');
+result.include(result.basePath+'/js/view/mxStylesheet.js');
+result.include(result.basePath+'/js/view/mxCellState.js');
+result.include(result.basePath+'/js/view/mxGraphSelectionModel.js');
+result.include(result.basePath+'/js/view/mxCellEditor.js');
+result.include(result.basePath+'/js/view/mxCellRenderer.js');
+result.include(result.basePath+'/js/view/mxEdgeStyle.js');
+result.include(result.basePath+'/js/view/mxStyleRegistry.js');
+result.include(result.basePath+'/js/view/mxGraphView.js');
+result.include(result.basePath+'/js/view/mxGraph.js');
+result.include(result.basePath+'/js/view/mxCellOverlay.js');
+result.include(result.basePath+'/js/view/mxOutline.js');
+result.include(result.basePath+'/js/view/mxMultiplicity.js');
+result.include(result.basePath+'/js/view/mxLayoutManager.js');
+result.include(result.basePath+'/js/view/mxSpaceManager.js');
+result.include(result.basePath+'/js/view/mxSwimlaneManager.js');
+result.include(result.basePath+'/js/view/mxTemporaryCellStates.js');
+result.include(result.basePath+'/js/view/mxCellStatePreview.js');
+result.include(result.basePath+'/js/view/mxConnectionConstraint.js');
+result.include(result.basePath+'/js/handler/mxGraphHandler.js');
+//result.include(result.basePath+'/js/handler/mxPanningHandler.js');
+result.include(result.basePath+'/js/handler/mxCellMarker.js');
+result.include(result.basePath+'/js/handler/mxSelectionCellsHandler.js');
+result.include(result.basePath+'/js/handler/mxConnectionHandler.js');
+result.include(result.basePath+'/js/handler/mxConstraintHandler.js');
+result.include(result.basePath+'/js/handler/mxRubberband.js');
+result.include(result.basePath+'/js/handler/mxVertexHandler.js');
+result.include(result.basePath+'/js/handler/mxEdgeHandler.js');
+result.include(result.basePath+'/js/handler/mxElbowEdgeHandler.js');
+result.include(result.basePath+'/js/handler/mxEdgeSegmentHandler.js');
+result.include(result.basePath+'/js/handler/mxKeyHandler.js');
+//result.include(result.basePath+'/js/handler/mxTooltipHandler.js');
+result.include(result.basePath+'/js/handler/mxCellTracker.js');
+result.include(result.basePath+'/js/handler/mxCellHighlight.js');
+result.include(result.basePath+'/js/editor/mxDefaultKeyHandler.js');
+//result.include(result.basePath+'/js/editor/mxDefaultPopupMenu.js');
+//result.include(result.basePath+'/js/editor/mxDefaultToolbar.js');
+//result.include(result.basePath+'/js/editor/mxEditor.js');
+result.include(result.basePath+'/js/io/mxCodecRegistry.js');
+result.include(result.basePath+'/js/io/mxCodec.js');
+result.include(result.basePath+'/js/io/mxObjectCodec.js');
+result.include(result.basePath+'/js/io/mxCellCodec.js');
+result.include(result.basePath+'/js/io/mxModelCodec.js');
+result.include(result.basePath+'/js/io/mxRootChangeCodec.js');
+result.include(result.basePath+'/js/io/mxChildChangeCodec.js');
+result.include(result.basePath+'/js/io/mxTerminalChangeCodec.js');
+result.include(result.basePath+'/js/io/mxGenericChangeCodec.js');
+result.include(result.basePath+'/js/io/mxGraphCodec.js');
+result.include(result.basePath+'/js/io/mxGraphViewCodec.js');
+result.include(result.basePath+'/js/io/mxStylesheetCodec.js');
+result.include(result.basePath+'/js/io/mxDefaultKeyHandlerCodec.js');
+//result.include(result.basePath+'/js/io/mxDefaultToolbarCodec.js');
+//result.include(result.basePath+'/js/io/mxDefaultPopupMenuCodec.js');
+//result.include(result.basePath+'/js/io/mxEditorCodec.js');
+
+return result;
+
+})();

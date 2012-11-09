@@ -116,7 +116,7 @@ mxVertexHandler.prototype.init = function()
 	{
 		this.selectionBorder.node.style.cursor = mxConstants.CURSOR_MOVABLE_VERTEX;
 	}
-
+	
 	mxEvent.redirectMouseEvents(this.selectionBorder.node, this.graph, this.state);
 	
 	// Adds the sizer handles
@@ -339,7 +339,7 @@ mxVertexHandler.prototype.getHandleForEvent = function(me)
 	{
 		// Connection highlight may consume events before they reach sizer handle
 		var tol = this.tolerance;
-		var hit = (this.allowHandleBoundsCheck && (mxClient.IS_IE || tol > 0)) ?
+		var hit = (this.allowHandleBoundsCheck && (tol > 0)) ?
 			new mxRectangle(me.getGraphX() - tol, me.getGraphY() - tol, 2 * tol, 2 * tol) : null;
 
 		for (var i = 0; i < this.sizers.length; i++)

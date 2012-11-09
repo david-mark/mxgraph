@@ -1581,24 +1581,21 @@ mxGraph.prototype.collapseExpandResource = (mxClient.language != 'none') ? 'coll
 	this.view.init();
 	
 	// Updates the size of the container for the current graph
-	this.sizeDidChange();
-
-	// Automatic deallocation of memory
-	if (mxClient.IS_IE)
-	{
-		mxEvent.addListener(window, 'unload', mxUtils.bind(this, function()
-		{
-			this.destroy();
-		}));
-		
-		// Disable shift-click for text
-		mxEvent.addListener(container, 'selectstart',
-			mxUtils.bind(this, function()
-			{
-				return this.isEditing();
-			})
-		);
-	}
+	this.sizeDidChange();	
+	
+	// Disable shift-click for text
+    mxEvent.addListener(container, 'selectstart',
+        mxUtils.bind(this, function(e)
+        {
+            if (!this.isEditing) {
+                if (e.preventDefault) {
+                    e.preventDefault();
+                }
+                e.returnValue = false;
+            }
+        })
+    );
+	
 };
 
 /**
@@ -1609,10 +1606,14 @@ mxGraph.prototype.collapseExpandResource = (mxClient.language != 'none') ? 'coll
  */
 mxGraph.prototype.createHandlers = function(container)
 {
-	this.tooltipHandler = new mxTooltipHandler(this);
-	this.tooltipHandler.setEnabled(false);
-	this.panningHandler = new mxPanningHandler(this);
-	this.panningHandler.panningEnabled = false;
+    if ('undefined' != typeof mxTooltipHandler) {        
+	    this.tooltipHandler = new mxTooltipHandler(this);    
+	    this.tooltipHandler.setEnabled(false);
+    }
+	if ('undefined' != typeof mxPanningHandler) {
+	    this.panningHandler = new mxPanningHandler(this);
+	    this.panningHandler.panningEnabled = false;
+	}	
 	this.selectionCellsHandler = new mxSelectionCellsHandler(this);
 	this.connectionHandler = new mxConnectionHandler(this);
 	this.connectionHandler.setEnabled(false);
@@ -1632,7 +1633,7 @@ mxGraph.prototype.createSelectionModel = function()
 /**
  * Function: createStylesheet
  * 
- * Creates a new <mxGraphSelectionModel> to be used in this graph.
+ * Creates a new <mxStyleSheet> to be used in this graph.
  */
 mxGraph.prototype.createStylesheet = function()
 {
@@ -2684,7 +2685,7 @@ mxGraph.prototype.sizeDidChange = function()
 			this.doResizeContainer(width, height);
 		}
 
-		if (this.preferPageSize || (!mxClient.IS_IE && this.pageVisible))
+		if (this.preferPageSize || this.pageVisible)
 		{
 			var size = this.getPreferredPageSize(bounds, width, height);
 			
@@ -2738,32 +2739,6 @@ mxGraph.prototype.sizeDidChange = function()
  */
 mxGraph.prototype.doResizeContainer = function(width, height)
 {
-	// Fixes container size for different box models
-	if (mxClient.IS_IE)
-	{
-		if (mxClient.IS_QUIRKS)
-		{
-			var borders = this.getBorderSizes();
-			
-			// max(2, ...) required for native IE8 in quirks mode
-			width += Math.max(2, borders.x + borders.width + 1);
-			height += Math.max(2, borders.y + borders.height + 1);
-		}
-		else if (document.documentMode >= 9)
-		{
-			width += 3;
-			height += 5;
-		}
-		else
-		{
-			width += 1;
-			height += 1;
-		}
-	}
-	else
-	{
-		height += 1;
-	}
 	
 	if (this.maximumContainerSize != null)
 	{
@@ -2773,6 +2748,9 @@ mxGraph.prototype.doResizeContainer = function(width, height)
 
 	this.container.style.width = Math.ceil(width) + 'px';
 	this.container.style.height = Math.ceil(height) + 'px';
+	
+	// TODO: Adjust for border
+	
 };
 
 /**
@@ -6443,15 +6421,7 @@ mxGraph.prototype.panGraph = function(dx, dy)
 			// can be moved without changing the state of the container
 			if (dx == 0 && dy == 0)
 			{
-				// Workaround for ignored removeAttribute on SVG element in IE9 standards
-				if (mxClient.IS_IE)
-				{
-					canvas.setAttribute('transform', 'translate('+ dx + ',' + dy + ')');
-				}
-				else
-				{
-					canvas.removeAttribute('transform');
-				}
+				canvas.setAttribute('transform', 'translate('+ dx + ',' + dy + ')');				
 				
 				if (this.shiftPreview1 != null)
 				{
@@ -7060,8 +7030,10 @@ mxGraph.prototype.isCloneEvent = function(evt)
  * pressed on any other platform.
  */
 mxGraph.prototype.isToggleEvent = function(evt)
-{
-	return (mxClient.IS_MAC) ? mxEvent.isMetaDown(evt) : mxEvent.isControlDown(evt);
+{	
+	// Use either Command (Mac only) or Ctrl key; doesn't matter which one (or if both are pressed)
+	
+	return mxEvent.isMetaDown(evt) || mxEvent.isControlDown(evt);
 };
 
 /**
@@ -10904,7 +10876,7 @@ mxGraph.prototype.updateMouseEvent = function(me)
  * sender - Optional sender argument. Default is this.
  */
 mxGraph.prototype.fireMouseEvent = function(evtName, me, sender)
-{
+{    
 	if (sender == null)
 	{
 		sender = this;
@@ -10938,10 +10910,6 @@ mxGraph.prototype.fireMouseEvent = function(evtName, me, sender)
 			// to make it consistent with behaviour in browser with mouse.
 			this.lastTouchTime = 0;
 			this.dblClick(me.getEvent(), me.getCell());
-			
-			// Stop bubbling but do not consume to make sure the device
-			// can bring up the virtual keyboard for editing
-			me.getEvent().cancelBubble = true;
 		} 
 		else
 		{
@@ -10951,34 +10919,31 @@ mxGraph.prototype.fireMouseEvent = function(evtName, me, sender)
 		}
 	}
 	
-	// Workaround for IE9 standards mode ignoring tolerance for double clicks
-	var noDoubleClick = me.getEvent().detail/*clickCount*/ != 2;
+	var doubleClick = me.getEvent().detail/*clickCount*/ == 2;
 	
-	if (mxClient.IS_IE && document.compatMode == 'CSS1Compat')
-	{
-		if ((this.lastMouseX != null && Math.abs(this.lastMouseX - me.getX()) > this.doubleTapTolerance) ||
-			(this.lastMouseY != null && Math.abs(this.lastMouseY - me.getY()) > this.doubleTapTolerance))
-		{
-			noDoubleClick = true;
-		}
 		
-		if (evtName == mxEvent.MOUSE_UP)
-		{
-			this.lastMouseX = me.getX();
-			this.lastMouseY = me.getY();
-		}
+	/*if ((this.lastMouseX != null && Math.abs(this.lastMouseX - me.getX()) > this.doubleTapTolerance) ||
+		(this.lastMouseY != null && Math.abs(this.lastMouseY - me.getY()) > this.doubleTapTolerance))
+	{
+	    doubleClick = true;
+	}*/
+	
+	if (evtName == mxEvent.MOUSE_UP)
+	{
+		this.lastMouseX = me.getX();
+		this.lastMouseY = me.getY();
 	}
 
+	
 	// Filters too many mouse ups when the mouse is down
-	if ((evtName != mxEvent.MOUSE_UP || this.isMouseDown) && noDoubleClick)
+	if ((evtName != mxEvent.MOUSE_UP || this.isMouseDown) && !doubleClick)
 	{
 		if (evtName == mxEvent.MOUSE_UP)
 		{
 			this.isMouseDown = false;
 		}
-
-		if (!this.isEditing() && (mxClient.IS_OP || mxClient.IS_SF || mxClient.IS_GC ||
-			(mxClient.IS_IE && mxClient.IS_SVG) || me.getEvent().target != this.container))
+		
+		if (!this.isEditing() && (mxClient.IS_SVG || me.getEvent().target != this.container))
 		{
 			if (evtName == mxEvent.MOUSE_MOVE && this.isMouseDown && this.autoScroll)
 			{
@@ -10990,7 +10955,10 @@ mxGraph.prototype.fireMouseEvent = function(evtName, me, sender)
 				var args = [sender, me];
 
 				// Does not change returnValue in Opera
-				me.getEvent().returnValue = true;
+				
+				var e = me.getEvent();
+				
+				
 				
 				for (var i = 0; i < this.mouseListeners.length; i++)
 				{

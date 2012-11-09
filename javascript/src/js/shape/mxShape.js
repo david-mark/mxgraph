@@ -285,7 +285,8 @@ mxShape.prototype.init = function(container)
 			// each element that is referenced from this instance. After adding the
 			// DOM to the document, the outerHTML is overwritten to fix the VML
 			// rendering and the references are restored.
-			if (document.documentMode == 8 && mxUtils.isVml(this.node))
+			
+			if (mxClient.IS_VML_BAD)
 			{
 				this.reparseVml();
 			}
@@ -301,7 +302,6 @@ mxShape.prototype.init = function(container)
 };
 
 /**
- * Function: reparseVml
  * 
  * Forces a parsing of the outerHTML of this node and restores all references specified in <vmlNodes>.
  * This is a workaround for the VML rendering bug in IE8 standards mode.
@@ -310,6 +310,7 @@ mxShape.prototype.reparseVml = function()
 {
 	// Assigns temporary IDs to VML nodes so that references can be restored when
 	// inserted into the DOM as a string
+	
 	for (var i = 0; i < this.vmlNodes.length; i++)
 	{
 		if (this[this.vmlNodes[i]] != null)
@@ -321,6 +322,7 @@ mxShape.prototype.reparseVml = function()
 	this.node.outerHTML = this.node.outerHTML;
 	
 	// Restores references to the actual DOM nodes
+	
 	for (var i = 0; i < this.vmlNodes.length; i++)
 	{
 		if (this[this.vmlNodes[i]] != null)
@@ -988,7 +990,7 @@ mxShape.prototype.createSvgPipe = function(id, start, end, node)
 	// other browsers need a stroke color to perform the hit-detection but
 	// do not ignore the visibility attribute. Side-effect is that Opera's
 	// hit detection for horizontal/vertical edges seems to ignore the pipe.
-	pipe.setAttribute('stroke', (mxClient.IS_OP) ? 'none' : 'white');
+	pipe.setAttribute('stroke', 'none');
 	
 	return pipe;
 };
@@ -1059,7 +1061,7 @@ mxShape.prototype.createPoints = function(moveCmd, lineCmd, curveCmd, isRelative
 	var offsetY = (isRelative) ? this.bounds.y : 0;
 
 	// Workaround for crisp shape-rendering in IE9
-	var crisp = (this.crisp && this.dialect == mxConstants.DIALECT_SVG && mxClient.IS_IE) ? 0.5 : 0;
+	var crisp = (this.crisp && this.dialect == mxConstants.DIALECT_SVG) ? 0.5 : 0;
 
 	if (isNaN(this.points[0].x) || isNaN(this.points[0].y))
 	{
@@ -1449,7 +1451,7 @@ mxShape.prototype.updateSvgBounds = function(node)
 	var w = this.bounds.width;
 	var h = this.bounds.height;
 	
-	if (this.isRounded && !(this.crisp && mxClient.IS_IE))
+	if (this.isRounded && !this.crisp)
 	{
 		node.setAttribute('x', this.bounds.x);
 		node.setAttribute('y', this.bounds.y);
@@ -1458,10 +1460,8 @@ mxShape.prototype.updateSvgBounds = function(node)
 	}
 	else
 	{
-		// Workaround for crisp shape-rendering in IE9
-		var dd = (this.crisp && mxClient.IS_IE) ? 0.5 : 0;
-		node.setAttribute('x', Math.round(this.bounds.x) + dd);
-		node.setAttribute('y', Math.round(this.bounds.y) + dd);
+		node.setAttribute('x', Math.round(this.bounds.x));
+		node.setAttribute('y', Math.round(this.bounds.y));
 
 		w = Math.round(w);
 		h = Math.round(h);

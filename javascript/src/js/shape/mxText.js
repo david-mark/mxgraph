@@ -87,7 +87,7 @@ function mxText(value, bounds, align, valign, color,
 	this.clipped = (clipped != null) ? clipped : false;
 	this.overflow = (overflow != null) ? overflow : 'visible';
 	this.labelPadding = (labelPadding != null) ? labelPadding : 0;
-};
+}
 
 /**
  * Extends mxShape.
@@ -155,26 +155,26 @@ mxText.prototype.create = function(container)
 	var node = null;
 	
 	if (this.dialect == mxConstants.DIALECT_SVG)
-	{
-		node = this.createSvg();
-	}
-	else if (this.dialect == mxConstants.DIALECT_STRICTHTML ||
-			this.dialect == mxConstants.DIALECT_PREFERHTML ||
-			!mxUtils.isVml(container))
-	{
-		if (mxClient.IS_SVG && !mxClient.NO_FO)
-		{
-			node = this.createForeignObject();
-		}
-		else
-		{
-			node = this.createHtml();
-		}
-	}
-	else
-	{
-		node = this.createVml();
-	}
+    {
+        node = this.createSvg();
+    }
+    else if (this.dialect == mxConstants.DIALECT_STRICTHTML ||
+            this.dialect == mxConstants.DIALECT_PREFERHTML ||
+            !mxUtils.isVml(container))
+    {
+        if (mxClient.IS_SVG && !mxClient.NO_FO)
+        {
+            node = this.createForeignObject();
+        }
+        else
+        {
+            node = this.createHtml();
+        }
+    }
+    else
+    {
+        node = this.createVml();
+    }
 	
 	return node;
 };
@@ -201,7 +201,6 @@ mxText.prototype.createForeignObject = function()
 	var fo = document.createElementNS(mxConstants.NS_SVG, 'foreignObject');
 	fo.setAttribute('pointer-events', 'fill');
 
-	// Ignored in FF
 	if (this.overflow == 'hidden')
 	{
 		fo.style.overflow = 'hidden';
@@ -354,12 +353,10 @@ mxText.prototype.createHtmlTable = function()
 	var tr = document.createElement('tr');
 	var td = document.createElement('td');
 	
-	// Workaround for ignored table height in IE9 standards mode
-	if (document.documentMode >= 9)
-	{
-		// FIXME: Ignored in print preview for IE9 standards mode
-		td.style.height = '100%';
-	}
+	
+	// FIXME: Ignored in print preview for IE9 standards mode
+	td.style.height = '100%';
+
 
 	tr.appendChild(td);
 	tbody.appendChild(tr);
@@ -456,7 +453,7 @@ mxText.prototype.updateHtmlTable = function(table, scale)
 	}
 
 	// Font shadow (only available in IE)
-	if (mxClient.IS_IE)
+	if (typeof td.style.filter == 'string')
 	{
 		if (this.isStyleSet(mxConstants.FONT_SHADOW))
 		{
@@ -464,7 +461,7 @@ mxText.prototype.updateHtmlTable = function(table, scale)
 		}
 		else
 		{
-			td.style.removeAttribute('filter');
+			td.removeAttribute('filter');
 		}
 	}
 
@@ -531,11 +528,7 @@ mxText.prototype.updateTableWidth = function(table)
 		var space = Math.min(size.width, ((this.horizontal || mxUtils.isVml(this.node)) ?
 				this.bounds.width : this.bounds.height) / this.scale);
 		
-		// Opera needs the new width to be scaled
-		if (mxClient.IS_OP)
-		{
-			space *= this.scale;
-		}
+		
 
 		table.style.width = Math.round(space) + 'px';
 		td.style.whiteSpace = 'normal';
@@ -691,10 +684,10 @@ mxText.prototype.redrawTextbox = function()
 			var dx = Math.round(x0 - x);
 			var dy = Math.round(y0 - y);
 	
-			textbox.style.clip = 'rect(' + (dy / this.scale) + ' ' +
-				((dx + this.bounds.width) / this.scale) + ' ' +
-				((dy + this.bounds.height) / this.scale) + ' ' +
-				(dx / this.scale) + ')';
+			textbox.style.clip = 'rect(' + (dy / this.scale) + 'px ' +
+				((dx + this.bounds.width) / this.scale) + 'px ' +
+				((dy + this.bounds.height) / this.scale) + 'px ' +
+				(dx / this.scale) + 'px)';
 		}
 		else
 		{
@@ -730,12 +723,8 @@ mxText.prototype.redrawHtmlTable = function()
 	// and only do this if actual rotation did change
 	var oldBrowser = false;
 	var fallbackScale = 1;
-	
-	if (mxClient.IS_IE)
-	{
-		table.style.removeAttribute('filter');
-	}
-	else if (mxClient.IS_SF || mxClient.IS_GC)
+		
+	if (mxClient.IS_WT)
 	{
 		table.style.WebkitTransform = '';
 	}
@@ -744,13 +733,15 @@ mxText.prototype.redrawHtmlTable = function()
 		table.style.MozTransform = '';
 		td.style.MozTransform = '';
 	}
-	else
+	else if (mxClient.IS_OT)
 	{
-		if (mxClient.IS_OT)
-		{
-			table.style.OTransform = '';
-		}
-		
+		table.style.OTransform = '';
+	}
+	else if (typeof table.style.filter == 'string')
+	{
+		table.style.removeAttribute('filter');
+	}
+	else {
 		fallbackScale = this.scale;
 		oldBrowser = true;
 	}
@@ -810,25 +801,19 @@ mxText.prototype.redrawHtmlTable = function()
 	// Rotates the label and adds offset
 	if (!this.horizontal)
 	{
-		if (mxClient.IS_IE && mxClient.IS_SVG)
+		if (typeof table.style.msTransform == 'string')
 		{
 			table.style.msTransform = 'rotate(' + this.verticalTextDegree + 'deg)';
 		}
-		else if (mxClient.IS_IE)
-		{
-			table.style.filter = this.ieVerticalFilter;
-			shiftX = (w - h) / 2;
-			shiftY = -shiftX;
-		}
-		else if (mxClient.IS_SF || mxClient.IS_GC)
+		else if (typeof table.style.WebkitTransform == 'string')
 		{
 			table.style.WebkitTransform = 'rotate(' + this.verticalTextDegree + 'deg)';
 		}
-		else if (mxClient.IS_OT)
+		else if (typeof table.style.OTransform == 'string')
 		{
 			table.style.OTransform = 'rotate(' + this.verticalTextDegree + 'deg)';
 		}
-		else if (mxClient.IS_MT)
+		else if (typeof table.style.MozTransform == 'string')
 		{
 			// Firefox paints background and border only if background is on TD
 			// and border is on TABLE and both are rotated, just the TD with a
@@ -839,12 +824,19 @@ mxText.prototype.redrawHtmlTable = function()
 			s2 = 1 / this.scale;
 			s = 1;
 		}
+		else if (typeof table.style.filter == 'string')
+		{
+			table.style.filter = this.ieVerticalFilter;
+			shiftX = (w - h) / 2;
+			shiftY = -shiftX;
+		}
+		
 	}
 
 	// Sets the zoom
 	var correction = true;
 	
-	if (mxClient.IS_MT || oldBrowser)
+	if (mxClient.IS_MT || mxClient.IS_OT || oldBrowser)
 	{
 		if (mxClient.IS_MT)
 		{
@@ -860,12 +852,12 @@ mxText.prototype.redrawHtmlTable = function()
 	else if (!oldBrowser)
 	{
 		// Workaround for unsupported zoom CSS in IE9 standards mode
-		if (document.documentMode >= 9)
+		if (typeof td.style.msTransform == 'string')
 		{
 			td.style.msTransform = 'scale(' + this.scale + ')';
 		}
 		// Uses transform in Webkit for better HTML scaling
-		else if (mxClient.IS_SF || mxClient.IS_GC)
+		else if (mxClient.IS_WT)
 		{
 			td.style.WebkitTransform = 'scale(' + this.scale + ')';
 		}
@@ -874,16 +866,12 @@ mxText.prototype.redrawHtmlTable = function()
 			td.style.zoom = this.scale;
 			
 			// Fixes scaling of border width
-			if (table.style.borderWidth != '' && document.documentMode != 8)
+			if (table.style.borderWidth != '')
 			{
 				table.style.borderWidth = Math.round(this.scale * parseInt(table.style.borderWidth)) + 'px';
 			}
 			
-			// Workaround for wrong scale in IE8 standards mode
-			if (document.documentMode == 8 || !mxClient.IS_IE)
-			{
-				s = 1;
-			}
+			s = 1;
 			
 			correction = false;
 		}
@@ -907,7 +895,7 @@ mxText.prototype.redrawHtmlTable = function()
 	    table.style.height = rect.height + 'px';
 		
 		// Workaround for wrong scale in border and background rendering for table and td in IE8/9 standards mode
-		if ((this.background != null || this.border != null) && document.documentMode >= 8)
+		if ((this.background != null || this.border != null))
 		{
 			var html = (this.replaceLinefeeds) ? this.value.replace(/\n/g, '<br/>') : this.value;
 			td.innerHTML = '<div style="padding:' + this.labelPadding + 'px;background:' + td.style.background + ';border:' + table.style.border + '">' + html + '</div>';
@@ -927,84 +915,41 @@ mxText.prototype.redrawHtmlTable = function()
 				var dx = Math.max(0, offset.x * s);
 				var dy = Math.max(0, offset.y * s);
 
-				// TODO: Fix clipping for Opera
-				table.style.clip = 'rect(' + (dy) + 'px ' + (dx + this.bounds.width * s2) +
-					'px ' + (dy + this.bounds.height * s2) + 'px ' + (dx) + 'px)';
+				// TODO: Fix clipping for Opera Transforms (?)
+				table.style.clip = 'rect(' + (dy) + 'px ' + (dx + this.bounds.width * s2) + 'px ' + (dy + this.bounds.height * s2) + 'px ' + (dx) + 'px)';
 			}
 			else
-			{
-				// Workaround for IE clip using top, right, bottom, left (un-rotated)
-				if (mxClient.IS_IE)
+			{				
+				var uw = this.bounds.width;
+				var uh = this.bounds.height;
+				
+				var dx = 0;
+				var dy = 0;
+
+				if (this.align == mxConstants.ALIGN_RIGHT)
 				{
-					var uw = this.bounds.width;
-					var uh = this.bounds.height;
-					var dx = 0;
-					var dy = 0;
-	
-					if (this.align == mxConstants.ALIGN_LEFT)
-					{
-						dx = Math.max(0, w - uh / this.scale) * this.scale;
-					}
-					else if (this.align == mxConstants.ALIGN_CENTER)
-					{
-						dx = Math.max(0, w - uh / this.scale) * this.scale / 2;
-					}
-					
-					if (this.valign == mxConstants.ALIGN_BOTTOM)
-					{
-						dy = Math.max(0, h - uw / this.scale) * this.scale;
-					}
-					else if (this.valign == mxConstants.ALIGN_MIDDLE)
-					{
-						dy = Math.max(0, h - uw / this.scale) * this.scale / 2;
-					}
-	
-					table.style.clip = 'rect(' + (dx) + 'px ' + (dy + uw - 1) +
-						'px ' + (dx + uh - 1) + 'px ' + (dy) + 'px)';
+					dx = Math.max(0, w - uh);
 				}
-				else
+				else if (this.align == mxConstants.ALIGN_CENTER)
 				{
-					var uw = this.bounds.width / this.scale;
-					var uh = this.bounds.height / this.scale;
-					
-					if (mxClient.IS_OT)
-					{
-						uw = this.bounds.width;
-						uh = this.bounds.height;
-					}
-					
-					var dx = 0;
-					var dy = 0;
-	
-					if (this.align == mxConstants.ALIGN_RIGHT)
-					{
-						dx = Math.max(0, w - uh);
-					}
-					else if (this.align == mxConstants.ALIGN_CENTER)
-					{
-						dx = Math.max(0, w - uh) / 2;
-					}
-					
-					if (this.valign == mxConstants.ALIGN_BOTTOM)
-					{
-						dy = Math.max(0, h - uw);
-					}
-					else if (this.valign == mxConstants.ALIGN_MIDDLE)
-					{
-						dy = Math.max(0, h - uw) / 2;
-					}
-					
-					if (mxClient.IS_GC || mxClient.IS_SF)
-					{
-						dx *= this.scale;
-						dy *= this.scale;
-						uw *= this.scale;
-						uh *= this.scale;
-					}
-	
-					table.style.clip = 'rect(' + (dy) + ' ' + (dx + uh) +
-						' ' + (dy + uw) + ' ' + (dx) + ')';
+					dx = Math.max(0, w - uh) / 2;
 				}
+				
+				if (this.valign == mxConstants.ALIGN_BOTTOM)
+				{
+					dy = Math.max(0, h - uw);
+				}
+				else if (this.valign == mxConstants.ALIGN_MIDDLE)
+				{
+					dy = Math.max(0, h - uw) / 2;
+				}
+									
+				dx *= this.scale;
+				dy *= this.scale;
+				uw *= this.scale;
+				uh *= this.scale;
+
+				table.style.clip = 'rect(' + (dy) + 'px ' + (dx + uh) + 'px ' + (dy + uw) + 'px ' + (dx) + 'px)';
 			}
 		}
 		else
@@ -1016,7 +961,7 @@ mxText.prototype.redrawHtmlTable = function()
 	{
 		this.boundingBox = this.bounds.clone();
 		
-		if (document.documentMode >= 9 || mxClient.IS_SVG)
+		if (mxClient.IS_SVG)
 		{
 			table.style.left = Math.round(this.bounds.x + this.scale / 2 + shiftX) + 'px';
 			table.style.top = Math.round(this.bounds.y + this.scale / 2 + shiftY) + 'px';
@@ -1025,7 +970,7 @@ mxText.prototype.redrawHtmlTable = function()
 		}
 		else
 		{
-			s = (document.documentMode == 8) ? this.scale : 1;
+			s = this.scale || 1;
 			table.style.left = Math.round(this.bounds.x + this.scale / 2) + 'px';
 			table.style.top = Math.round(this.bounds.y + this.scale / 2) + 'px';
 			table.style.width = Math.round((this.bounds.width - this.scale) / s) + 'px';
@@ -1081,47 +1026,6 @@ mxText.prototype.redrawForeignObject = function()
 		fo.setAttribute('opacity', this.opacity / 100);
 	}
 	
-	// Workaround for table background not appearing above the shape that is
-	// behind the label in Safari. To solve this, we add a background rect that
-	// paints the background instead.
-	if (mxClient.IS_SF)
-	{
-		table.style.borderStyle = 'none';
-		table.firstChild.firstChild.firstChild.style.background = '';
-		
-		if (this.backgroundNode == null && (this.background != null || this.border != null))
-		{
-			this.backgroundNode = document.createElementNS(mxConstants.NS_SVG, 'rect');
-			group.insertBefore(this.backgroundNode, group.firstChild);
-		}
-		else if (this.backgroundNode != null && this.background == null && this.border == null)
-		{
-			this.backgroundNode.parentNode.removeChild(this.backgroundNode);
-			this.backgroundNode = null;
-		}
-		
-		if (this.backgroundNode != null)
-		{
-			if (this.background != null)
-			{
-				this.backgroundNode.setAttribute('fill', this.background);
-			}
-			else
-			{
-				this.backgroundNode.setAttribute('fill', 'none');
-			}
-	
-			if (this.border != null)
-			{
-				this.backgroundNode.setAttribute('stroke', this.border);
-			}
-			else
-			{
-				this.backgroundNode.setAttribute('stroke', 'none');
-			}
-		}
-	}
-	
 	var tr = '';
 	
 	if (this.overflow != 'fill')
@@ -1134,7 +1038,7 @@ mxText.prototype.redrawForeignObject = function()
 		fo.style.clip = '';
 		
 		// Workaround for size of table not updated if inside foreignObject
-		if (this.wrap || (!mxClient.IS_GC && !mxClient.IS_SF))
+		if (this.wrap)
 		{
 			document.body.appendChild(table);
 		}
@@ -1251,20 +1155,16 @@ mxText.prototype.redrawForeignObject = function()
 					uh = tmp;
 				}
 	
-				// No clipping in Chome available due to bug
-				if (!mxClient.IS_GC)
-				{
-					var clip = this.getSvgClip(this.node.ownerSVGElement, x, y, uw, uh);
-					
-					if (clip != this.clip)
-					{
-						this.releaseSvgClip();
-						this.clip = clip;
-						clip.refCount++;
-					}
+				var clip = this.getSvgClip(this.node.ownerSVGElement, x, y, uw, uh);
 				
-					this.backgroundNode.setAttribute('clip-path', 'url(#' + clip.getAttribute('id') + ')');
+				if (clip != this.clip)
+				{
+					this.releaseSvgClip();
+					this.clip = clip;
+					clip.refCount++;
 				}
+			
+				this.backgroundNode.setAttribute('clip-path', 'url(#' + clip.getAttribute('id') + ')');
 			}
 		}
 		else
@@ -1309,8 +1209,7 @@ mxText.prototype.redrawForeignObject = function()
 		}
 		
 		// Must use translate instead of x- and y-attribute on FO for iOS
-		tr = 'scale(' + s + ') translate(' + (this.bounds.x / s) +
-			' ' + (this.bounds.y / s) + ')';
+		tr = 'scale(' + s + ') translate(' + (this.bounds.x / s) + ' ' + (this.bounds.y / s) + ')';
 
 		if (!this.wrap)
 		{

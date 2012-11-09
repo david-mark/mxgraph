@@ -278,14 +278,14 @@
 	 * 
 	 * Defines the cursor for a movable bend. Default is 'pointer'.
 	 */
-	CURSOR_BEND_HANDLE: 'pointer',
+	CURSOR_BEND_HANDLE: 'move',
 	
 	/**
 	 * Variable: CURSOR_CONNECT
 	 * 
 	 * Defines the cursor for a connectable state. Default is 'pointer'.
 	 */
-	CURSOR_CONNECT: 'pointer',
+	CURSOR_CONNECT: 'move',
 
 	/**
 	 * Variable: HIGHLIGHT_COLOR
@@ -417,7 +417,7 @@
 	 * Defines the strokewidth to be used for the outline rectangle
 	 * stroke width. Default is 3.
 	 */
-	OUTLINE_STROKEWIDTH: (mxClient.IS_IE) ? 2 : 3,
+	OUTLINE_STROKEWIDTH: 3,
 
 	/**
 	 * Variable: HANDLE_SIZE
@@ -1036,7 +1036,7 @@
 	/**
 	 * Variable: STYLE_LABEL_PADDING
 	 * 
-	 * Defines the key for the label padding, ie. the space between the label
+	 * Defines the key for the label padding, i.e. the space between the label
 	 * border and the label.
 	 */
 	STYLE_LABEL_PADDING: 'labelPadding',

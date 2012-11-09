@@ -57,7 +57,7 @@ var mxLog =
 	{
 		if (mxLog.window == null && document.body != null)
 		{
-			var title = mxLog.consoleName + ' - mxGraph ' + mxClient.VERSION;
+			var title = mxLog.consoleName;
 
 			// Creates a table that maintains the layout
 			var table = document.createElement('table');
@@ -76,15 +76,9 @@ var mxLog =
 			mxLog.textarea.style.resize = 'none';
 			mxLog.textarea.value = mxLog.buffer;
 
-			// Workaround for wrong width in standards mode
-			if (mxClient.IS_NS && document.compatMode != 'BackCompat')
-			{
-				mxLog.textarea.style.width = '99%';
-			}
-			else
-			{
-				mxLog.textarea.style.width = '100%';
-			}
+			
+			mxLog.textarea.style.width = '99%';
+			
 			
 			td.appendChild(mxLog.textarea);
 			tr.appendChild(td);
@@ -156,33 +150,30 @@ var mxLog =
 			});
 
 			// Workaround for clientHeight in body = 0 if doctype in FF
-			var h = (document.body.clientHeight || document.documentElement.clientHeight);
-			var w = document.body.clientWidth;
+			var h = document.documentElement.clientHeight || document.body.clientHeight;
+			var w = document.documentElement.clientWidth || document.body.clientWidth;
 			
-			mxLog.window = new mxWindow(title, table, Math.max(0, w-320), Math.max(0, h-210), 300, 160);
+			mxLog.window = new mxWindow(title, table, Math.max(0, w - 320), Math.max(0, h - 180), 300, 160);
 			mxLog.window.setMaximizable(true);
 			mxLog.window.setScrollable(false);
 			mxLog.window.setResizable(true);
 			mxLog.window.setClosable(true);
 			mxLog.window.destroyOnClose = false;
 			
-			// Workaround for ignored textarea height in various setups
-			if ((mxClient.IS_NS || mxClient.IS_IE) && !mxClient.IS_GC &&
-				!mxClient.IS_SF && document.compatMode != 'BackCompat')
+			
+			var elt = mxLog.window.getElement();
+			
+			var resizeHandler = function(sender, evt)
 			{
-				var elt = mxLog.window.getElement();
-				
-				var resizeHandler = function(sender, evt)
-				{
-					mxLog.textarea.style.height = Math.max(0, elt.offsetHeight - 70)+'px';
-				}; 
-				
-				mxLog.window.addListener(mxEvent.RESIZE_END, resizeHandler);
-				mxLog.window.addListener(mxEvent.MAXIMIZE, resizeHandler);
-				mxLog.window.addListener(mxEvent.NORMALIZE, resizeHandler);
+				mxLog.textarea.style.height = Math.max(0, elt.offsetHeight - 70)+'px';
+			}; 
+			
+			mxLog.window.addListener(mxEvent.RESIZE_END, resizeHandler);
+			mxLog.window.addListener(mxEvent.MAXIMIZE, resizeHandler);
+			mxLog.window.addListener(mxEvent.NORMALIZE, resizeHandler);
 
-				mxLog.textarea.style.height = '92px';
-			}
+			mxLog.textarea.style.height = '92px';
+			
 		}
 	},
 	

@@ -514,7 +514,7 @@ mxDefaultToolbar.prototype.connect = function(vertex, evt, source)
 mxDefaultToolbar.prototype.installDropHandler = function (img, dropHandler)
 {
 	var sprite = document.createElement('img');
-	sprite.setAttribute('src', img.getAttribute('src'));
+	sprite.src = img.src;
 
 	// Handles delayed loading of the images
 	var loader = mxUtils.bind(this, function(evt)
@@ -532,14 +532,8 @@ mxDefaultToolbar.prototype.installDropHandler = function (img, dropHandler)
 		mxEvent.removeListener(sprite, 'load', loader);
 	});
 
-	if (mxClient.IS_IE)
-	{
-		loader();
-	}
-	else
-	{
-		mxEvent.addListener(sprite, 'load', loader);
-	}	
+	
+	loader();
 };
 
 /**

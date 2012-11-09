@@ -497,7 +497,9 @@ mxGraphView.prototype.invalidate = function(cell, recurse, includeEdges, orderCh
  */
 mxGraphView.prototype.validate = function(cell)
 {
-	var t0 = mxLog.enter('mxGraphView.validate');
+    if ('undefined' != typeof mxLog) {
+        var t0 = mxLog.enter('mxGraphView.validate');
+    }
 	window.status = mxResources.get(this.updatingDocumentResource) ||
 		this.updatingDocumentResource;
 	
@@ -517,7 +519,10 @@ mxGraphView.prototype.validate = function(cell)
 	
 	window.status = mxResources.get(this.doneResource) ||
 		this.doneResource;
-	mxLog.leave('mxGraphView.validate', t0);
+	
+	if ('undefined' != typeof mxLog) {
+	    mxLog.leave('mxGraphView.validate', t0);
+	}
 };
 
 /**
@@ -1853,7 +1858,7 @@ mxGraphView.prototype.getState = function(cell, create)
 			}
 		}
 	}
-
+	
 	return state;
 };
 
@@ -2143,9 +2148,7 @@ mxGraphView.prototype.installListeners = function()
 				
 				// Condition to avoid scrollbar events starting a rubberband
 				// selection
-				if (this.isContainerEvent(evt) && ((!mxClient.IS_IE && 
-					!mxClient.IS_GC && !mxClient.IS_OP && !mxClient.IS_SF) ||
-					!this.isScrollEvent(evt)))
+				if (this.isContainerEvent(evt) && (!this.isScrollEvent(evt)))
 				{
 					graph.fireMouseEvent(mxEvent.MOUSE_DOWN,
 						new mxMouseEvent(evt));
@@ -2191,6 +2194,7 @@ mxGraphView.prototype.installListeners = function()
 			// Workaround for touch events which started on some DOM node
 			// on top of the container, in which case the cells under the
 			// mouse for the move and up events are not detected.
+			
 			if (mxClient.IS_TOUCH)
 			{
 				var x = mxEvent.getClientX(evt);
@@ -2213,7 +2217,9 @@ mxGraphView.prototype.installListeners = function()
 		{
 			mouseDown: function(sender, me)
 			{
-				graph.panningHandler.hideMenu();
+			    if (graph.panningHandler) {
+			        graph.panningHandler.hideMenu();
+			    }
 			},
 			mouseMove: function() { },
 			mouseUp: function() { }
@@ -2425,11 +2431,6 @@ mxGraphView.prototype.createSvg = function()
 	var root = document.createElementNS(mxConstants.NS_SVG, 'svg');
 	root.style.width = '100%';
 	root.style.height = '100%';
-	
-	if (mxClient.IS_IE)
-	{
-		root.style.marginBottom = '-4px';
-	}
 
 	root.appendChild(this.canvas);
 	

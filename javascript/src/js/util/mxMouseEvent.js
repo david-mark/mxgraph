@@ -228,13 +228,14 @@ mxMouseEvent.prototype.consume = function(preventDefault)
 {
 	preventDefault = (preventDefault != null) ? preventDefault : true;
 	
-	if (preventDefault && this.evt.preventDefault)
+	if (preventDefault)
 	{
-		this.evt.preventDefault();
+		if (this.evt.preventDefault) {		
+			this.evt.preventDefault();
+		}
+		
+		this.evt.returnValue = false;
 	}
-
-	// Workaround for images being dragged in IE
-	this.evt.returnValue = false;
 	
 	// Sets local consumed state
 	this.consumed = true;

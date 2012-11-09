@@ -230,10 +230,9 @@ mxPanningHandler.prototype.mouseDown = function(sender, me)
  *   me.evt.returnValue = false;
  *   
  *   // Sets local consumed state
- *   if (!mxClient.IS_SF && !mxClient.IS_MAC)
- *   {
- *     me.consumed = true;
- *   }
+ *   
+ *   me.consumed = true;
+ *   
  * };
  * (end)
  */

@@ -162,10 +162,7 @@ var mxClient =
 	 * True if this client uses a touch interface (no mouse). Currently this
 	 * detects IPads, IPods, IPhones and Android devices.
 	 */
-  	IS_TOUCH: navigator.userAgent.toUpperCase().indexOf('IPAD') > 0 ||
-  			  navigator.userAgent.toUpperCase().indexOf('IPOD') > 0 ||
-  			  navigator.userAgent.toUpperCase().indexOf('IPHONE') > 0 ||
-  			  navigator.userAgent.toUpperCase().indexOf('ANDROID') > 0,
+  	IS_TOUCH: false,
 
 	/**
 	 * Variable: IS_LOCAL

@@ -226,7 +226,7 @@ mxXmlRequest.prototype.getXml = function()
 	// type errors in the mxCellCodec when putting the nodes into a new
 	// document. This happens in IE9 standards mode and with XML user
 	// objects only, as they are used directly as values in cells.
-	if (document.documentMode >= 9 || xml == null || xml.documentElement == null)
+	if (xml == null || xml.documentElement == null)
 	{
 		xml = mxUtils.parseXml(this.request.responseText);
 	}

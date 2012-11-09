@@ -392,15 +392,6 @@ function mxEditor(config)
 			// Invokes the <onInit> hook
 			this.onInit();
 		}
-		
-		// Automatic deallocation of memory
-		if (mxClient.IS_IE)
-		{
-			mxEvent.addListener(window, 'unload', mxUtils.bind(this, function()
-			{
-				this.destroy();
-			}));
-		}
 	}
 };
 
@@ -1833,12 +1824,6 @@ mxEditor.prototype.setGraphContainer = function (container)
 		{
 			mxEvent.disableContextMenu(container);
 		}
-
-		// Workaround for stylesheet directives in IE
-		if (mxClient.IS_IE)
-		{
-			new mxDivResizer(container);
-		}
 	}
 };
 
@@ -2052,12 +2037,6 @@ mxEditor.prototype.createToolbar = function ()
 mxEditor.prototype.setToolbarContainer = function (container)
 {
 	this.toolbar.init(container);
-	
-	// Workaround for stylesheet directives in IE
-	if (mxClient.IS_IE)
-	{
-		new mxDivResizer(container);
-	}
 };
 
 /**
@@ -2095,12 +2074,6 @@ mxEditor.prototype.setStatusContainer = function (container)
 			this.setStatus((mxResources.get(this.currentFileResource) ||
 				this.currentFileResource)+': '+this.filename);
 		}));
-		
-		// Workaround for stylesheet directives in IE
-		if (mxClient.IS_IE)
-		{
-			new mxDivResizer(container);
-		}
 	}
 };
 
@@ -2138,12 +2111,6 @@ mxEditor.prototype.setTitleContainer = function (container)
 	{
 		container.innerHTML = this.getTitle();
 	}));
-
-	// Workaround for stylesheet directives in IE
-	if (mxClient.IS_IE)
-	{
-		new mxDivResizer(container);
-	}
 };
 
 /**
@@ -2858,20 +2825,18 @@ mxEditor.prototype.showHelp = function (tasks)
 			wnd.setImage(this.helpWindowImage);
 		}
 		
-		// Workaround for ignored iframe height 100% in FF
-		if (mxClient.IS_NS)
+		
+		var handler = function(sender)
 		{
-			var handler = function(sender)
-			{
-				var h = wnd.div.offsetHeight;
-				frame.setAttribute('height', (h-26)+'px');
-			};
-			
-			wnd.addListener(mxEvent.RESIZE_END, handler);
-			wnd.addListener(mxEvent.MAXIMIZE, handler);
-			wnd.addListener(mxEvent.NORMALIZE, handler);
-			wnd.addListener(mxEvent.SHOW, handler);
-		}
+			var h = wnd.div.offsetHeight;
+			frame.setAttribute('height', (h-26)+'px');
+		};
+		
+		wnd.addListener(mxEvent.RESIZE_END, handler);
+		wnd.addListener(mxEvent.MAXIMIZE, handler);
+		wnd.addListener(mxEvent.NORMALIZE, handler);
+		wnd.addListener(mxEvent.SHOW, handler);
+	
 		
 		this.help = wnd;
 	}

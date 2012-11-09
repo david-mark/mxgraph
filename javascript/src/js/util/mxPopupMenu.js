@@ -381,8 +381,8 @@ mxPopupMenu.prototype.showSubmenu = function(parent, row)
 		document.body.appendChild(row.div);
 		
 		// Moves the submenu to the left side if there is no space
-		var left = parseInt(row.div.offsetLeft);
-		var width = parseInt(row.div.offsetWidth);
+		var left = row.div.offsetLeft;
+		var width = row.div.offsetWidth;
 		
 		var b = document.body;
 		var d = document.documentElement;
@@ -391,8 +391,7 @@ mxPopupMenu.prototype.showSubmenu = function(parent, row)
 		
 		if (left + width > right)
 		{
-			row.div.style.left = (parent.div.offsetLeft - width +
-				((mxClient.IS_IE) ? 6 : -6)) + 'px';
+			row.div.style.left = (parent.div.offsetLeft - width) + 'px';
 		}
 		
 		mxUtils.fit(row.div);
@@ -500,7 +499,7 @@ mxPopupMenu.prototype.isMenuShowing = function()
 mxPopupMenu.prototype.showMenu = function()
 {
 	// Disables filter-based shadow in IE9 standards mode
-	if (document.documentMode >= 9)
+	if (typeof this.div.style.filter == 'string' && typeof document.documentElement.style.boxShadow == 'string')
 	{
 		this.div.style.filter = 'none';
 	}

@@ -69,7 +69,7 @@ function mxCell(value, geometry, style)
 	this.value = value;
 	this.setGeometry(geometry);
 	this.setStyle(style);
-	
+		
 	if (this.onInit != null)
 	{
 		this.onInit();

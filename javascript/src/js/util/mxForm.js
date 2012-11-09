@@ -80,6 +80,10 @@ mxForm.prototype.addButtons = function(okFunct, cancelFunct)
 	
 	tr.appendChild(td);
 	this.body.appendChild(tr);
+	
+	// Prevent memory leaks
+	
+	button = null;	
 };
 
 /**
@@ -127,10 +131,9 @@ mxForm.prototype.addTextarea = function(name, value, rows)
 {
 	var input = document.createElement('textarea');
 	
-	if (mxClient.IS_NS)
-	{
-		rows--;
-	}
+	
+	rows--;
+
 	
 	input.setAttribute('rows', rows || 2);
 	input.value = value;

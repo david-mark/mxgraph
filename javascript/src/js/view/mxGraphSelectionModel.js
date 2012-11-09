@@ -401,7 +401,9 @@ function mxSelectionChange(selectionModel, added, removed)
  */
 mxSelectionChange.prototype.execute = function()
 {
-	var t0 = mxLog.enter('mxSelectionChange.execute');
+    if (typeof mxLog != 'undefined') {
+        var t0 = mxLog.enter('mxSelectionChange.execute');
+    }
 	window.status = mxResources.get(
 		this.selectionModel.updatingSelectionResource) ||
 		this.selectionModel.updatingSelectionResource;
@@ -428,7 +430,9 @@ mxSelectionChange.prototype.execute = function()
 
 	window.status = mxResources.get(this.selectionModel.doneResource) ||
 		this.selectionModel.doneResource;
-	mxLog.leave('mxSelectionChange.execute', t0);
+	if (typeof mxLog != 'undefined') {
+	    mxLog.leave('mxSelectionChange.execute', t0);
+	}
 	
 	this.selectionModel.fireEvent(new mxEventObject(mxEvent.CHANGE,
 			'added', this.added, 'removed', this.removed));

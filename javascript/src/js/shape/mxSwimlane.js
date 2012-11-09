@@ -494,7 +494,7 @@ mxSwimlane.prototype.redrawSvg = function()
 	this.content.removeAttribute('width');
 	this.content.removeAttribute('height');
 	
-	var crisp = (this.crisp && mxClient.IS_IE) ? 0.5 : 0;
+	var crisp = (this.crisp) ? 0.5 : 0;
 	var x = Math.round(this.bounds.x) + crisp;
 	var y = Math.round(this.bounds.y) + crisp;
 	var w = Math.round(this.bounds.width);

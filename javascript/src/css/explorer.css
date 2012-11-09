@@ -10,6 +10,3 @@ div.mxWindow {
 	filter:progid:DXImageTransform.Microsoft.DropShadow(OffX=4, OffY=4, 
         Color='#C0C0C0', Positive='true')
 }
-td.mxWindowTitle {
-	height: 23px;
-}

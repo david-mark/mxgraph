@@ -244,14 +244,8 @@ mxConstraintHandler.prototype.update = function(me, source)
 					this.currentPoint = this.focusPoints[i];
 					
 					var tmp = this.focusIcons[i].bounds.clone();
-					tmp.grow((mxClient.IS_IE) ? 3 : 2);
-					
-					if (mxClient.IS_IE)
-					{
-						tmp.width -= 1;
-						tmp.height -= 1;
-					}
-					
+					tmp.grow(2);
+										
 					if (this.focusHighlight == null)
 					{
 						var hl = new mxRectangleShape(tmp, null, this.highlightColor, 3);

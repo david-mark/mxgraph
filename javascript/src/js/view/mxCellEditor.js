@@ -141,7 +141,7 @@ mxCellEditor.prototype.init = function ()
 	this.textarea.setAttribute('cols', '20');
 	this.textarea.setAttribute('rows', '4');
 
-	if (mxClient.IS_GC)
+	if (typeof this.textarea.style.resize == 'string')
 	{
 		this.textarea.style.resize = 'none';
 	}

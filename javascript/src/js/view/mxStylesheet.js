@@ -174,7 +174,7 @@ mxStylesheet.prototype.getDefaultEdgeStyle = function()
  * and the values are either JavaScript objects, such as
  * <mxPerimeter.RightAngleRectanglePerimeter> (which is in fact a function)
  * or expressions, such as true. Note that not all keys will be
- * interpreted by all shapes (eg. the line shape ignores the fill color).
+ * interpreted by all shapes (e.g. the line shape ignores the fill color).
  * The final call to this method associates the style with a name in the
  * stylesheet. The style is used in a cell with the following code:
  * 

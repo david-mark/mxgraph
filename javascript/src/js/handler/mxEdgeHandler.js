@@ -595,7 +595,7 @@ mxEdgeHandler.prototype.getHandleForEvent = function(me)
 	{
 		// Connection highlight may consume events before they reach sizer handle
 		var tol = this.tolerance;
-		var hit = (this.allowHandleBoundsCheck && (mxClient.IS_IE || tol > 0)) ?
+		var hit = (this.allowHandleBoundsCheck && (tol > 0)) ?
 			new mxRectangle(me.getGraphX() - tol, me.getGraphY() - tol, 2 * tol, 2 * tol) : null;
 
 		for (var i = 0; i < this.bends.length; i++)
@@ -612,7 +612,7 @@ mxEdgeHandler.prototype.getHandleForEvent = function(me)
 	if (me.isSource(this.labelShape) || me.isSource(this.state.text))
 	{
 		// Workaround for SELECT element not working in Webkit
-		if ((!mxClient.IS_SF && !mxClient.IS_GC) || me.getSource().nodeName != 'SELECT')
+		if (me.getSource().nodeName != 'SELECT')
 		{
 			return mxEvent.LABEL_HANDLE;
 		}
@@ -946,7 +946,7 @@ mxEdgeHandler.prototype.mouseMove = function(sender, me)
 		me.consume();
 	}
 	// Workaround for disabling the connect highlight when over handle
-	else if (mxClient.IS_IE && this.getHandleForEvent(me) != null)
+	else if (this.getHandleForEvent(me) != null)
 	{
 		me.consume(false);
 	}

@@ -107,6 +107,8 @@ mxStencilShape.prototype.configureHtmlShape = function(node)
  */
 mxStencilShape.prototype.createVml = function()
 {
+	// NOTE: What is this sniff about?
+	
 	var name = (document.documentMode == 8) ? 'div' : 'v:group';
 	var node = document.createElement(name);
 	this.configureTransparentBackground(node);
@@ -185,7 +187,7 @@ mxStencilShape.prototype.redrawShape = function()
 
 		if (mxUtils.isVml(node))
 		{
-			var s = (document.documentMode != 8) ? this.vmlScale : 1;
+			var s = this.vmlScale ||  1;
 			node.coordsize = (w * s) + ',' + (h * s);
 		}
 		

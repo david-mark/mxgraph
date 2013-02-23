@@ -633,8 +633,8 @@ mxWindow.prototype.installMinimizeHandler = function()
 		mxEvent.consume(evt);
 	});
 	
-	var md = (mxClient.IS_TOUCH) ? 'touchstart' : 'mousedown';
-	mxEvent.addListener(this.minimize, md, funct);
+	//var md = (mxClient.IS_TOUCH) ? 'touchstart' : 'mousedown';
+	mxEvent.addListener(this.minimize, 'click', funct);
 };
 	
 /**
@@ -758,8 +758,8 @@ mxWindow.prototype.installMaximizeHandler = function()
 		}
 	});
 	
-	var md = (mxClient.IS_TOUCH) ? 'touchstart' : 'mousedown';
-	mxEvent.addListener(this.maximize, md, funct);
+	//var md = (mxClient.IS_TOUCH) ? 'touchstart' : 'mousedown';
+	mxEvent.addListener(this.maximize, 'click', funct);
 	mxEvent.addListener(this.title, 'dblclick', funct);
 };
 	
@@ -861,8 +861,8 @@ mxWindow.prototype.installCloseHandler = function()
 	
 	this.title.insertBefore(this.closeImg, this.title.firstChild);
 
-	var md = (mxClient.IS_TOUCH) ? 'touchstart' : 'mousedown';
-	mxEvent.addListener(this.closeImg, md, mxUtils.bind(this, function(evt)
+	//var md = (mxClient.IS_TOUCH) ? 'touchstart' : 'mousedown';
+	mxEvent.addListener(this.closeImg, 'click', mxUtils.bind(this, function(evt)
 	{
 		this.fireEvent(new mxEventObject(mxEvent.CLOSE, 'event', evt));
 		

@@ -661,7 +661,7 @@ mxWindow.prototype.installMaximizeHandler = function()
 	this.maximize.setAttribute('title', 'Maximize');
 	this.maximize.style.cursor = 'default';
 	this.maximize.style.marginLeft = '1px';
-	this.maximize.style.cursor = 'auto';
+	this.maximize.style.cursor = 'default';
 	this.maximize.style.display = 'none';
 	
 	this.title.appendChild(this.maximize);
